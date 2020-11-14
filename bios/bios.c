@@ -372,6 +372,10 @@ static void bios_init(void)
     if (has_scc)
         boot_status |= SCC_AVAILABLE;   /* track progress */
 #endif
+#if CONF_WITH_DUART
+    if (has_duart)
+	boot_status |= DUART_AVAILABLE; /* track process */
+#endif
 
     /* The sound init must be done before allowing MFC interrupts,
      * because of dosound stuff in the timer C interrupt routine.
