@@ -367,6 +367,10 @@ static void bios_init(void)
     if (has_scc)
         boot_status |= SCC_AVAILABLE;   /* track progress */
 #endif
+#if CONF_WITH_DUART
+    if (has_duart)
+	boot_status |= DUART_AVAILABLE; /* track process */
+#endif
 
     /* Initialize the DSP */
 #if CONF_WITH_DSP
