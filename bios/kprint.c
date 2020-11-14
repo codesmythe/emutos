@@ -110,6 +110,17 @@ static void kprintf_outc_sccB(int c)
 }
 #endif
 
+#if DUART_DEBUG_PRINT
+static void kprintf_outc_duartB(int c)
+{
+    /* Raw terminals usually require CRLF */
+    if (c == '\n')
+        bconoutDUARTB(1,'\r');
+
+    bconoutDUARTB(1,c);
+}
+#endif
+
 #if DETECT_NATIVE_FEATURES
 static void kprintf_outc_natfeat(int c)
 {
@@ -182,6 +193,21 @@ static int vkprintf(const char *fmt, va_list ap)
             if (!Super(1L))             /* check for user state.    */
                 stacksave = (char *)Super(0L);  /* if so, switch to super   */
         rc = doprintf(kprintf_outc_sccB, fmt, ap);
+        if (stacksave)                  /* if we switched, */
+            SuperToUser(stacksave);     /* switch back.    */
+        return rc;
+    }
+#endif
+
+#if DUART_DEBUG_PRINT
+    if (boot_status&DUART_AVAILABLE) {    /* no DUART, no message */
+        int rc;
+        char *stacksave = NULL;
+
+        if (boot_status&DOS_AVAILABLE)  /* if Super() is available, */
+            if (!Super(1L))             /* check for user state.    */
+                stacksave = (char *)Super(0L);  /* if so, switch to super   */
+        rc = doprintf(kprintf_outc_duartB, fmt, ap);
         if (stacksave)                  /* if we switched, */
             SuperToUser(stacksave);     /* switch back.    */
         return rc;
