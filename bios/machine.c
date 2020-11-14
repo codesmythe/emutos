@@ -34,6 +34,7 @@
 #include "delay.h"
 #include "mfp.h"
 #include "scc.h"
+#include "duart68681.h"
 #include "memory.h"
 #include "coldfire.h"
 #include "dma.h"
@@ -192,6 +193,24 @@ static void detect_scc(void)
 }
 
 #endif /* CONF_WITH_SCC */
+
+#if CONF_WITH_DUART
+
+int has_duart;
+
+/*
+ * detect DUART (ColdFire)
+ */
+static void detect_duart(void)
+{
+    has_duart = 0;
+    if (check_read_byte(DUART_BASE))
+        has_duart = 1;
+
+    KDEBUG(("has_duart = %d\n", has_duart));
+}
+
+#endif /* CONF_WITH_DUART */
 
 #if CONF_WITH_VME
 
@@ -545,6 +564,10 @@ void machine_detect(void)
     if (!IS_ARANYM)
         detect_scc();
 #endif
+#if CONF_WITH_DUART
+    if (!IS_ARANYM)
+        detect_duart();
+#endif
 #if CONF_WITH_VME
     if (!IS_ARANYM)
         detect_vme();
@@ -637,6 +660,29 @@ void machine_init(void)
         delay_loop(loops);
     }
  #endif
+
+ #if CONF_WITH_DUART
+    if (has_duart)
+    {
+        DUART_CRA(RS232_PORT) = DUART_CR_RESET_MR; /* Reset pointer register. */
+        DUART_CRA(RS232_PORT) = DUART_CR_RESET_RX; /* Reset receiver. */
+        DUART_CRA(RS232_PORT) = DUART_CR_RESET_TX; /* Reset transmitter. */
+        DUART_CRA(RS232_PORT) = DUART_CR_RESET_ERROR; /* Reset error status. */
+        DUART_CRA(RS232_PORT) = DUART_CR_BKCHGINT; /* Reset BREAK change interrupt. */
+
+ #if CONF_WITH_DUART_CHANNEL_B
+        DUART_CRB(RS232_PORT) = DUART_CR_RESET_MR; /* Reset pointer register. */
+        DUART_CRB(RS232_PORT) = DUART_CR_RESET_RX; /* Reset receiver. */
+        DUART_CRB(RS232_PORT) = DUART_CR_RESET_TX; /* Reset transmitter. */
+        DUART_CRB(RS232_PORT) = DUART_CR_RESET_ERROR; /* Reset error status. */
+        DUART_CRB(RS232_PORT) = DUART_CR_BKCHGINT; /* Reset BREAK change interrupt. */
+ #endif /* CONF_WITH_DUART_CHANNEL_B */
+
+        DUART_IMR(RS232_PORT) = 0; /* Mask off all interrupts */
+
+    }
+ #endif /* CONF_WITH_DUART */
+
 #endif /* CONF_WITH_RESET */
 }
 

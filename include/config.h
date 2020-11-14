@@ -850,6 +850,37 @@
 #endif
 
 /*
+ * Set CONF_WITH_DUART to 1 to enable support for the MC68681 Dual UART
+ */
+#ifndef CONF_WITH_DUART
+# define CONF_WITH_DUART 0
+#endif
+
+/*
+ * Set base address of DUART. Coldfire uses 0xFFFF8600
+ */
+#ifndef DUART_BASE
+# define DUART_BASE 0xFFFF8600UL
+#endif
+
+/*
+ * Set CONF_WITH_DUART_CHANNEL_B to 1 to enable the second port on 
+ * the MC68681. ColdFile UARTS are a subset of the MC68681 and don't
+ * support the second channel.
+ */
+#ifndef CONF_WITH_DUART_CHANNEL_B
+# define CONF_WITH_DUART_CHANNEL_B 0
+#endif
+
+/*
+ * Set CONF_DUART_TIMER_C to 1 to simulate Timer C using the 
+ * timer available on the MC68681 DUART.
+ */
+#ifndef CONF_DUART_TIMER_C
+# define CONF_DUART_TIMER_C 0
+#endif
+
+/*
  * Set CONF_COLDFIRE_TIMER_C to 1 to simulate Timer C using the
  * internal ColdFire timers
  */
@@ -1729,6 +1760,15 @@
 #endif
 
 /*
+ * Set DUART_DEBUG_PRINT to 1 to redirect debug prints to the DUART portB RS232
+ * out.
+ */
+
+#ifndef DUART_DEBUG_PRINT
+# define DUART_DEBUG_PRINT 0
+#endif
+
+/*
  * Set COLDFIRE_DEBUG_PRINT to 1 to redirect debug prints to the ColdFire serial port
  */
 #ifndef COLDFIRE_DEBUG_PRINT
@@ -1749,7 +1789,7 @@
 #endif
 
 /* Determine if kprintf() is available */
-#if CONF_WITH_UAE || DETECT_NATIVE_FEATURES || STONX_NATIVE_PRINT || CONSOLE_DEBUG_PRINT || RS232_DEBUG_PRINT || SCC_DEBUG_PRINT || COLDFIRE_DEBUG_PRINT || MIDI_DEBUG_PRINT
+#if CONF_WITH_UAE || DETECT_NATIVE_FEATURES || STONX_NATIVE_PRINT || CONSOLE_DEBUG_PRINT || RS232_DEBUG_PRINT || SCC_DEBUG_PRINT || DUART_DEBUG_PRINT || COLDFIRE_DEBUG_PRINT || MIDI_DEBUG_PRINT
 #  define HAS_KPRINTF 1
 # else
 #  define HAS_KPRINTF 0
@@ -1956,7 +1996,13 @@
 # endif
 #endif
 
-#if (CONSOLE_DEBUG_PRINT + RS232_DEBUG_PRINT + SCC_DEBUG_PRINT + COLDFIRE_DEBUG_PRINT + MIDI_DEBUG_PRINT) > 1
+#if !CONF_WITH_DUART_CHANNEL_B
+# if DUART_DEBUG_PRINT
+#  error DUART_DEBUG_PRINT requires CONF_WITH_DUART_CHANNEL_B
+# endif
+#endif
+
+#if (CONSOLE_DEBUG_PRINT + RS232_DEBUG_PRINT + SCC_DEBUG_PRINT + DUART_DEBUG_PRINT + COLDFIRE_DEBUG_PRINT + MIDI_DEBUG_PRINT) > 1
 # error Only one of CONSOLE_DEBUG_PRINT, RS232_DEBUG_PRINT, SCC_DEBUG_PRINT, COLDFIRE_DEBUG_PRINT or MIDI_DEBUG_PRINT must be set to 1.
 #endif
 

@@ -56,6 +56,10 @@ extern int has_tt_mfp;
 extern int has_scc;
 #endif
 
+#if CONF_WITH_DUART
+extern int has_duart;
+#endif
+
 #if CONF_WITH_VME
 extern int has_vme;
   #define HAS_VME has_vme
