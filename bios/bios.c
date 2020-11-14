@@ -377,6 +377,12 @@ static void bios_init(void)
 	boot_status |= DUART_AVAILABLE; /* track process */
 #endif
 
+    /* Initialize the DSP */
+#if CONF_WITH_DSP
+    KDEBUG(("dsp_init()\n"));
+    dsp_init();
+#endif
+
     /* The sound init must be done before allowing MFC interrupts,
      * because of dosound stuff in the timer C interrupt routine.
      */
