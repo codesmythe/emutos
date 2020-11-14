@@ -37,6 +37,7 @@
 #include "delay.h"
 #include "bios.h"
 #include "coldfire.h"
+#include "serport.h"
 #ifdef MACHINE_AMIGA
 #include "amiga.h"
 #endif
@@ -1043,6 +1044,8 @@ void kbd_init(void)
 #if CONF_SERIAL_CONSOLE
 # ifdef __mcoldfire__
     coldfire_rs232_enable_interrupt();
+# elif CONF_WITH_DUART
+    duart_rs232_enable_interrupt();
 # else
     /* FIXME: Enable interrupts on other hardware. */
 # endif
