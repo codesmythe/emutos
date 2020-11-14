@@ -37,6 +37,7 @@
 #include "delay.h"
 #include "bios.h"
 #include "coldfire.h"
+#include "serport.h"
 #include "amiga.h"
 #include "lisa.h"
 

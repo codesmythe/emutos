@@ -40,6 +40,9 @@ void just_rte(void);
 long check_read_byte(long);
 #endif
 
+#if CONF_WITH_DUART
+void duart_interrupt(void);
+#endif
 
 /* */
 LONG default_etv_critic(WORD err,WORD dev);
