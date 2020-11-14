@@ -1076,7 +1076,6 @@ void duart_rs232_interrupt_handler(void)
 
 static void duart_init_interrupts_common(void)
 {
-#if 0 /* Enabled in interrupt commmit */	
     LONG *vector_addr;
     /* Disable DUART interrupts before configuration */
     write_duart(DUART_IMR, 0);
@@ -1097,7 +1096,6 @@ static void duart_init_interrupts_common(void)
 #endif
     /* Enable the interrupt(s). */
     write_duart(DUART_IMR, IMR_value);
-#endif
 }
 
 #if CONF_DUART_TIMER_C
