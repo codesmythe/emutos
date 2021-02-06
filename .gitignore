@@ -12,7 +12,6 @@
 /*.rom
 /*.dc42
 /*.map
-/localconf.h
 /makefile.dep
 /needcountry.tmp
 /mkheader
