@@ -848,6 +848,7 @@ static void ide_get_data(volatile struct IDE *interface,UBYTE *buffer,UWORD nums
     ULONG bufferlen = numsecs * SECTOR_SIZE;
     XFERWIDTH *p = (XFERWIDTH *)buffer;
     XFERWIDTH *end = (XFERWIDTH *)(buffer + bufferlen);
+    XFERWIDTH *q;
 
     KDEBUG(("ide_get_data(%p, %p, %u, %d)\n", interface, buffer, numsecs, need_byteswap));
 
@@ -886,6 +887,7 @@ static void ide_get_data(volatile struct IDE *interface,UBYTE *buffer,UWORD nums
              * We always transfer multiples of SECTOR_SIZE (512 bytes).
              * Note that the pointer p gets incremented implicitly.
              */
+            q = p;
             ide_get_and_incr(&(interface->data), p);
             ide_get_and_incr(&(interface->data), p);
             ide_get_and_incr(&(interface->data), p);
@@ -905,6 +907,9 @@ static void ide_get_data(volatile struct IDE *interface,UBYTE *buffer,UWORD nums
             ide_get_and_incr(&(interface->data), p);
             ide_get_and_incr(&(interface->data), p);
             ide_get_and_incr(&(interface->data), p);
+#if IDE_8BIT_XFER
+            byteswap(q, 16);
+#endif            
         }
     }
 }
@@ -1020,6 +1025,9 @@ static void ide_put_data(volatile struct IDE *interface,UBYTE *buffer,UWORD nums
              * We always transfer multiples of SECTOR_SIZE (512 bytes).
              * Note that the pointer p gets incremented implicitly.
              */
+#if IDE_8BIT_XFER
+            byteswap(p, 16);
+#endif            
             ide_put_and_incr(p, &(interface->data));
             ide_put_and_incr(p, &(interface->data));
             ide_put_and_incr(p, &(interface->data));
