@@ -122,4 +122,8 @@ void disk_init_all(void);
 LONG disk_mediach(UWORD unit);
 void disk_rescan(UWORD unit);
 
+#if CONF_WITH_IDE
+void byteswap(UBYTE *buffer, ULONG size);
+#endif
+
 #endif /* DISK_H */

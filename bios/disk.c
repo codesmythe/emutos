@@ -433,7 +433,7 @@ PHYSSECT physsect, physsect2;
  * This function is only used during byteswap detection.
  * Subsequent byteswap will be performed by the IDE driver itself.
  */
-static void byteswap(UBYTE *buffer, ULONG size)
+void byteswap(UBYTE *buffer, ULONG size)
 {
     UWORD *p;
 
