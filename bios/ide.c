@@ -90,6 +90,9 @@ struct IDE
 #define IDE_WRITE_HEAD(i,a) \
     IDE_WRITE_REGISTER_PAIR(command,IDE_CMD_NOP,a)
 
+#define IDE_WRITE_FEATURES(i,a) \
+    IDE_WRITE_REGISTER_PAIR(filler0a[1],0,a)
+
 #define IDE_READ_REGISTER_PAIR(r) \
     *(volatile UWORD *)&ide_interface->r
 
@@ -118,6 +121,7 @@ struct IDE
     { i->head = b; i->command = a; }
 #define IDE_WRITE_CONTROL(i,a)    i->control = a
 #define IDE_WRITE_HEAD(i,a)       i->head = a
+#define IDE_WRITE_FEATURES(i,a)   i->features = a
 
 #define IDE_READ_STATUS(i)        i->command
 #define IDE_READ_ALT_STATUS(i)    i->control
@@ -143,7 +147,14 @@ struct IDE
 #define IDE_32BIT_XFER FALSE
 #endif
 
-#if IDE_32BIT_XFER
+#define IDE_8BIT_XFER TRUE
+
+#if IDE_8BIT_XFER
+#define XFERWIDTH   UBYTE
+#define xferswap(a)
+#define ide_get_and_incr(src, dst) asm volatile("move.b (%1), (%0)+" : "=a"(dst): "a"(src), "0"(dst));
+#define ide_put_and_incr(src, dst) asm volatile("move.b (%0)+, (%1)" : "=a"(src): "a"(dst), "0"(src));
+#elif IDE_32BIT_XFER
 #define XFERWIDTH   ULONG
 #define xferswap(a) swpw2(a)
 #define ide_get_and_incr(src,dst) asm volatile("move.l (%1),(%0)+" : "=a"(dst): "a"(src), "0"(dst));
@@ -155,7 +166,7 @@ struct IDE
 #define ide_put_and_incr(src,dst) asm volatile("move.w (%0)+,(%1)" : "=a"(src): "a"(dst), "0"(src));
 #endif
 
-#if CONF_ATARI_HARDWARE
+#if CONF_ATARI_HARDWARE || CONF_ATARI_IDE
 
 #ifdef MACHINE_FIREBEE
 #define NUM_IDE_INTERFACES  2
@@ -163,10 +174,15 @@ struct IDE
 #define NUM_IDE_INTERFACES  4   /* (e.g. stacked ST Doubler) */
 #endif
 
+#define NUM_IDE_INTERFACES 1
+
 struct IDE
 {
     XFERWIDTH data;
 #if !IDE_32BIT_XFER
+#if IDE_8BIT_XFER
+    UBYTE filler01;
+#endif
     UBYTE filler02[2];
 #endif
     UBYTE filler04;
@@ -206,6 +222,7 @@ struct IDE
 #define IDE_CMD_READ_MULTIPLE       0xc4
 #define IDE_CMD_WRITE_MULTIPLE      0xc5
 #define IDE_CMD_SET_MULTIPLE_MODE   0xc6
+#define IDE_CMD_SET_FEATURES        0xef
 
 #define IDE_MODE_CHS    (0 << 6)
 #define IDE_MODE_LBA    (1 << 6)
@@ -302,6 +319,7 @@ static void ide_detect_devices(UWORD ifnum);
 static LONG ide_identify(WORD dev);
 static void set_multiple_mode(WORD dev,UWORD multi_io);
 static int wait_for_not_BSY(volatile struct IDE *interface,LONG timeout);
+static LONG ide_nodata(UBYTE cmd,UWORD ifnum,UWORD dev,ULONG sector,UWORD count);
 
 /*
  * some add-on IDE interfaces for Atari systems do not completely
@@ -481,7 +499,7 @@ void detect_ide(void)
     has_ide = 0x01;
 #elif defined(MACHINE_FIREBEE)
     has_ide = 0x03;
-#elif CONF_ATARI_HARDWARE
+#elif CONF_ATARI_HARDWARE || CONF_ATARI_IDE
 
     /*
      * see if the IDE registers for possible interfaces are accessible.
@@ -505,6 +523,23 @@ void detect_ide(void)
 
     KDEBUG(("detect_ide(): has_ide = 0x%02x\n",has_ide));
 }
+
+#if IDE_8BIT_XFER
+static void ide_set_8bit_mode(UWORD ifnum)
+{
+    /* must be called after ide_detect_devices */
+    volatile struct IDE *interface = ifinfo[ifnum].base_address;
+    struct IFINFO *info = ifinfo + ifnum;
+    int i;
+    for (i = 0; i < 2; i++) {
+        IDE_WRITE_HEAD(interface, IDE_DEVICE(i));
+        if (info->dev[i].type == DEVTYPE_ATA || info->dev[i].type == DEVTYPE_ATAPI) {
+            IDE_WRITE_FEATURES(interface, 0x01);
+            ide_nodata(IDE_CMD_SET_FEATURES, ifnum, i, 0, 0);
+        }
+    }
+}
+#endif
 
 /*
  * perform any one-time initialisation required
@@ -542,8 +577,12 @@ void ide_init(void)
 
     /* detect devices */
     for (i = 0, bitmask = 1; i < NUM_IDE_INTERFACES; i++, bitmask <<= 1)
-        if (has_ide&bitmask)
+        if (has_ide&bitmask) {
             ide_detect_devices(i);
+#if IDE_8BIT_XFER
+            ide_set_8bit_mode(i);
+#endif
+        }
 
     /* set multiple mode for all devices that we have info for */
     for (i = 0; i < DEVICES_PER_BUS; i++)
