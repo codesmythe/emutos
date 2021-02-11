@@ -13,6 +13,8 @@
 #define CONF_WITH_MFP 1
 #define CONF_WITH_MFP_RS232 1
 #define CONF_SERIAL_CONSOLE 1
+/* #define CONF_SERIAL_CONSOLE_ANSI 1 */
+#define CONF_SERIAL_CONSOLE_POLLING_MODE 1
 #define RS232_DEBUG_PRINT 1
 /* #define CONSOLE_DEBUG_PRINT 1 */
 #define CONF_ATARI_IDE 1
@@ -23,5 +25,9 @@
 
 #define CONF_WITH_RESET 0 /* work around RESET/HALT bug on board */
 
+#define CONF_WITH_NVRAM 1
+#define CONF_WITH_YM2149 1
+#define CONF_WITH_PRINTER_PORT 1
 
+#define DEFAULT_BAUDRATE B19200
 

@@ -148,6 +148,7 @@ void cputc(WORD ch)
      * appropriate subroutines.
      */
     bconout(1, ch);
+    return;
 #endif
 
     if (!con_state) {
