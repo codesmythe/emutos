@@ -122,7 +122,7 @@ endif
 #
 
 # Include the AES and EmuDesk
-WITH_AES=1
+WITH_AES=0
 
 # Include EmuCON
 WITH_CLI=1
