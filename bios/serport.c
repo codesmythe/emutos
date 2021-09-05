@@ -953,12 +953,12 @@ void scc_init(void)
  * DUART support routines.
  */
 
-static void write_duart(UBYTE reg, UBYTE val) {
+void write_duart(UBYTE reg, UBYTE val) {
     volatile UBYTE *duart_base = (volatile UBYTE *) DUART_BASE;
     duart_base[reg] = val;
 }
 
-static UBYTE read_duart(UBYTE reg) {
+UBYTE read_duart(UBYTE reg) {
     volatile UBYTE *duart_base = (volatile UBYTE *) DUART_BASE;
     return duart_base[reg];
 }

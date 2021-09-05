@@ -150,4 +150,7 @@
 /* Bit definitions and macros for DUART_OP0, bit 0 */
 #define DUART_OP0_RTS               (0x01)
 
+void write_duart(UBYTE reg, UBYTE val);
+UBYTE read_duart(UBYTE reg);
+
 #endif
