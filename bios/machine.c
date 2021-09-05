@@ -664,22 +664,21 @@ void machine_init(void)
  #if CONF_WITH_DUART
     if (has_duart)
     {
-        DUART_CRA(RS232_PORT) = DUART_CR_RESET_MR; /* Reset pointer register. */
-        DUART_CRA(RS232_PORT) = DUART_CR_RESET_RX; /* Reset receiver. */
-        DUART_CRA(RS232_PORT) = DUART_CR_RESET_TX; /* Reset transmitter. */
-        DUART_CRA(RS232_PORT) = DUART_CR_RESET_ERROR; /* Reset error status. */
-        DUART_CRA(RS232_PORT) = DUART_CR_BKCHGINT; /* Reset BREAK change interrupt. */
+        write_duart(DUART_CRA, DUART_CR_RESET_MR); /* Reset register index  register. */
+        write_duart(DUART_CRA, DUART_CR_RESET_RX); /* Reset receiver. */
+        write_duart(DUART_CRA, DUART_CR_RESET_TX); /* Reset transmitter. */
+        write_duart(DUART_CRA, DUART_CR_RESET_ERROR); /* Reset error status. */
+        write_duart(DUART_CRA, DUART_CR_BKCHGINT); /* Reset BREAK change interrupt. */
 
  #if CONF_WITH_DUART_CHANNEL_B
-        DUART_CRB(RS232_PORT) = DUART_CR_RESET_MR; /* Reset pointer register. */
-        DUART_CRB(RS232_PORT) = DUART_CR_RESET_RX; /* Reset receiver. */
-        DUART_CRB(RS232_PORT) = DUART_CR_RESET_TX; /* Reset transmitter. */
-        DUART_CRB(RS232_PORT) = DUART_CR_RESET_ERROR; /* Reset error status. */
-        DUART_CRB(RS232_PORT) = DUART_CR_BKCHGINT; /* Reset BREAK change interrupt. */
+        write_duart(DUART_CRB, DUART_CR_RESET_MR); /* Reset register index  register. */
+        write_duart(DUART_CRB, DUART_CR_RESET_RX); /* Reset receiver. */
+        write_duart(DUART_CRB, DUART_CR_RESET_TX); /* Reset transmitter. */
+        write_duart(DUART_CRB, DUART_CR_RESET_ERROR); /* Reset error status. */
+        write_duart(DUART_CRB, DUART_CR_BKCHGINT); /* Reset BREAK change interrupt. */
  #endif /* CONF_WITH_DUART_CHANNEL_B */
 
-        DUART_IMR(RS232_PORT) = 0; /* Mask off all interrupts */
-
+        write_duart(DUART_IMR, 0); /* Mask off all interrupts */
     }
  #endif /* CONF_WITH_DUART */
 
