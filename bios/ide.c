@@ -116,11 +116,18 @@ struct IDE
     { i->cylinder_high = HIBYTE(a); i->cylinder_low = LOBYTE(a); }
 #define IDE_WRITE_COMMAND_HEAD(i,a,b) \
     { i->head = b; i->command = a; }
-#define IDE_WRITE_CONTROL(i,a)    i->control = a
+
+#ifdef MACHINE_TINY68K
+# define IDE_WRITE_CONTROL(i,a)
+# define IDE_READ_ALT_STATUS(i)    i->command
+#else
+# define IDE_WRITE_CONTROL(i,a)    i->control = a
+# define IDE_READ_ALT_STATUS(i)    i->control
+#endif
+
 #define IDE_WRITE_HEAD(i,a)       i->head = a
 
 #define IDE_READ_STATUS(i)        i->command
-#define IDE_READ_ALT_STATUS(i)    i->control
 #define IDE_READ_ERROR(i)         i->features
 #define IDE_READ_SECTOR_NUMBER_SECTOR_COUNT(i) \
     MAKE_UWORD(i->sector_number, i->sector_count)
@@ -155,13 +162,43 @@ struct IDE
 #define ide_put_and_incr(src,dst) asm volatile("move.w (%0)+,(%1)" : "=a"(src): "a"(dst), "0"(src));
 #endif
 
-#if CONF_ATARI_HARDWARE
+#if CONF_ATARI_HARDWARE || CONF_ATARI_IDE
 
 #ifdef MACHINE_FIREBEE
 #define NUM_IDE_INTERFACES  2
 #else
-#define NUM_IDE_INTERFACES  4   /* (e.g. stacked ST Doubler) */
+#define NUM_IDE_INTERFACES  1   /* (e.g. stacked ST Doubler) */
 #endif
+
+#ifdef MACHINE_TINY68K
+
+struct IDE
+{
+    XFERWIDTH data;
+    UBYTE filler02;
+    UBYTE features; /* Read: error */
+    UBYTE filler04;
+    UBYTE sector_count;
+    UBYTE filler06;
+    UBYTE sector_number;
+    UBYTE filler08;
+    UBYTE cylinder_low;
+    UBYTE filler0A;
+    UBYTE cylinder_high;
+    UBYTE filler0C;
+    UBYTE head;
+    UBYTE filler0E;
+    UBYTE command; /* Read: status */
+    /*
+     * Tinky68K does not provide access to the alternate status and
+     * control registers. Since we don't use interrupts for IDE access,
+     * this is okay.
+     */
+};
+
+#define ide_interface           ((volatile struct IDE *)0x00ffe000)
+
+#else
 
 struct IDE
 {
@@ -189,6 +226,8 @@ struct IDE
 };
 
 #define ide_interface           ((volatile struct IDE *)0xfff00000)
+
+#endif /* MACHINE_TINY68K */
 
 #else
 
@@ -481,7 +520,7 @@ void detect_ide(void)
     has_ide = 0x01;
 #elif defined(MACHINE_FIREBEE)
     has_ide = 0x03;
-#elif CONF_ATARI_HARDWARE
+#elif CONF_ATARI_HARDWARE || CONF_ATARI_IDE
 
     /*
      * see if the IDE registers for possible interfaces are accessible.
@@ -667,6 +706,17 @@ static void ide_detect_devices(UWORD ifnum)
         info->dev[i].spi = 0;   /* changed if using READ/WRITE MULTIPLE */
     }
 
+#ifdef MACHINE_TINY68K
+    /* Tiny68K does not provide access to the IDE device control register, 
+     * so we can't use the logic below that does a software reset. 
+     * As a hack, we just force the dev type for all detected interfaces. 
+     */
+    for (int i = 0; i < 2; i++) {
+        if (info->dev[i].type == DEVTYPE_UNKNOWN) { // device was detected
+            info->dev[i].type = DEVTYPE_ATA; // Force it to ATA.
+        }
+    }
+#else
     /* recheck after soft reset, also detect ata/atapi */
     IDE_WRITE_HEAD(interface,IDE_DEVICE(0));
     DELAY_400NS;
@@ -681,7 +731,7 @@ static void ide_detect_devices(UWORD ifnum)
             info->dev[i].type = ide_decode_type(status,signature);
         }
     }
-
+#endif
     for (i = 0; i < 2; i++)
         KDEBUG(("IDE i/f %d device %d is type %d\n",ifnum,i,info->dev[i].type));
 }
