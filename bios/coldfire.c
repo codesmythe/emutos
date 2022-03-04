@@ -213,7 +213,7 @@ void coldfire_rs232_interrupt_handler(void)
 
 #else
         /* And append a new IOREC value into the serial buffer */
-        push_serial_iorec(data);
+        push_serial_iorec(&iorec1.in, data);
 #endif /* CONF_SERIAL_CONSOLE */
     }
 }

@@ -802,14 +802,17 @@ _sccb_es_interrupt:
 // Currenty, we leave Channel B to be polled.
 
 _duart_interrupt:
-        move.l  d0,-(sp)
-        move.l  a0,-(sp)
-
+#ifdef __mcoldfire__
+        lea     -16(sp),sp
+        movem.l d0-d1/a0-a1,(sp)
+#else
+        movem.l d0-d1/a0-a1,-(sp)
+#endif
         lea     DUART_BASE, a0
-        move.b  11(a0), d0     // grab the Interrupt Status Register
-#if CONF_DUART_TIMER_C
+        move.b  11(a0), d0            // grab the Interrupt Status Register
+ #if CONF_DUART_TIMER_C
         btst.b  #3, d0                // Is Counter Ready (bit 3) set?
-        beq     duart_check_rx        //    No, skip timer handling code
+        beq     duart_check_rx_2      //    No, skip timer handling code
 
 // Call vector_5ms
 // As it will return with RTE, we must setup a proper stack frame
@@ -819,28 +822,28 @@ _duart_interrupt:
         .extern _vector_5ms
         move.l  _vector_5ms, a0
         jmp     (a0)                  // Call the 200 Hz system timer
-#endif
+ #endif
 duart_check_rx:
         lea     DUART_BASE, a0
-#if CONF_DUART_TIMER_C
-        tst.b   0x1f(a0)     // Send stop counter to ack timer interrupt. Does not actually stop since in timer mode.
-#endif
-#if CONF_SERIAL_CONSOLE
+ #if CONF_DUART_TIMER_C
+        tst.b   0x1f(a0)              // Send stop counter to ack timer interrupt. Does not actually stop since in timer mode.
+ #endif
+duart_check_rx_2:
         move.b  11(a0), d0            // Get the ISR again
         btst.b  #1, d0                // Is the Chan A Receive Ready (bit 1) set?
         beq     duart_intr_done       //    No, skip serial handling code
 
         jbsr    _duart_rs232_interrupt_handler
-#endif
 duart_intr_done:
-        move.l  (sp)+, a0
-        move.l  (sp)+, d0
+#ifdef __mcoldfire__
+        movem.l (sp),d0-d1/a0-a1
+        lea     16(sp),sp
+#else
+        movem.l (sp)+,d0-d1/a0-a1
+#endif
         rte
 
 #endif /* CONF_WITH_DUART */
-
-
-#endf /* WITH_CONF_DUART */
 
 // ==== Critical error handler functions =====================================
 
