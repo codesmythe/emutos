@@ -23,8 +23,7 @@
 #include "bios.h"
 
 #if CONF_SERIAL_CONSOLE_ANSI
-/* We disable cursor home commands because it is more convenient */
-# define SERIAL_CONSOLE_HONOR_HOME 0
+# define SERIAL_CONSOLE_HONOR_HOME 1
 #endif
 
 /* converts from escape sequence value to column or row number */
