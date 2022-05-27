@@ -1180,11 +1180,8 @@ static ULONG rsconf_duart(UBYTE port, EXT_IOREC *iorec, WORD baud, WORD ctrl, WO
 /* Called from assember routine duart_interrupt */
 void duart_rs232_interrupt_handler(void)
 {
-    UBYTE ascii;
-
     while(read_duart(DUART_SRA) & DUART_SR_RXRDY) {
-        ascii = read_duart(DUART_RHRA);
-        push_ascii_ikbdiorec(ascii);
+        push_serial_iorec(&iorecDUARTA.in, read_duart(DUART_RHRA));
     }
 }
 
