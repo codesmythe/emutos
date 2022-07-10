@@ -1,0 +1,5 @@
+/* Generated from CMakeLists.txt */
+#define MAJOR_VERSION @PROJECT_VERSION_MAJOR@
+#define MINOR_VERSION @PROJECT_VERSION_MINOR@
+#define FIX_VERSION   @PROJECT_VERSION_PATCH@
+const char version[] = "@BUILD_DATE@";

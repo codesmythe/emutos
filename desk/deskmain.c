@@ -41,7 +41,11 @@
 #include "biosdefs.h"
 #include "nls.h"
 #include "version.h"
-#include "../obj/header.h"
+#ifdef WITH_CMAKE
+  #include "header.h"
+#else
+  #include "../obj/header.h"
+#endif
 
 #include "aesbind.h"
 #include "desksupp.h"

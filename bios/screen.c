@@ -29,7 +29,11 @@
 #include "xbiosbind.h"
 #include "vectors.h"
 #include "country.h"
-#include "../obj/header.h"
+#ifdef WITH_CMAKE
+  #include "header.h"
+#else
+  #include "../obj/header.h"
+#endif
 #include "biosmem.h"
 #include "biosext.h"
 #include "bios.h"

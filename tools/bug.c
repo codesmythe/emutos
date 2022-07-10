@@ -2023,7 +2023,7 @@ static void update(char *fname)
  * xgettext : parse filelist_file, and generate messages_file
  */
 
-static void xgettext(void)
+static void xgettext(const char *message_file)
 {
     da *d;
     oh *o;
@@ -2053,11 +2053,13 @@ static void xgettext(void)
 
     po_convert_refs(o);
 
-    f = fopen(messages_file, "w");
+    f = fopen(message_file, "w");
     if (f == NULL)
-        fatal("couldn't create %s", messages_file);
+        fatal("couldn't create %s", message_file);
     print_po_file(f, o);
     fclose(f);
+    printf("Wrote to messages file '%s'.\n", message_file);
+
 }
 
 /*
@@ -2616,8 +2618,10 @@ static int usage(void)
 int main(int argc, char **argv)
 {
 int n;
+    int error = 1;
+    char *message_file = NULL;
 
-    while((n=getopt(argc,argv,"LV")) != -1) {
+    while((n=getopt(argc,argv,"LVm:")) != -1) {
         switch(n) {
         case 'L':
             wants_linenum_xrefs++;
@@ -2625,6 +2629,9 @@ int n;
         case 'V':
             fprintf(stderr, TOOLNAME " version " VERSION "\n");
             exit(0);
+            break;
+        case 'm':
+            message_file = strdup(optarg);
             break;
         default:
             usage();
@@ -2639,8 +2646,8 @@ int n;
     {
         if (argc-optind != 1)
             usage();
-        xgettext();
-        exit(0);
+        xgettext(message_file != NULL ? message_file : MESSAGES_FILE);
+        error = 0;
     }
 
     if (!strcmp(argv[optind], "update"))
@@ -2648,7 +2655,7 @@ int n;
         if (argc-optind != 2)
             usage();
         update(argv[optind+1]);
-        exit(0);
+        error = 0;
     }
 
     if (!strcmp(argv[optind], "make"))
@@ -2656,7 +2663,7 @@ int n;
         if (argc-optind != 1)
             usage();
         make();
-        exit(0);
+        error = 0;
     }
 
     if (!strcmp(argv[optind], "translate"))
@@ -2664,9 +2671,10 @@ int n;
         if (argc-optind != 3)
             usage();
         translate(argv[optind+1], argv[optind+2]);
-        exit(0);
+        error = 0;
     }
 
-    usage();
-    return 0;   /* keep compiler happy */
+    if (error) usage();
+    if (message_file) free(message_file);
+    return error;   /* keep compiler happy */
 }

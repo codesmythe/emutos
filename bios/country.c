@@ -18,7 +18,11 @@
 #include "biosdefs.h"
 #include "country.h"
 #include "nvram.h"
-#include "../obj/header.h"
+#ifdef WITH_CMAKE
+  #include "header.h"
+#else
+  #include "../obj/header.h"
+#endif
 #include "bios.h"
 
 /*

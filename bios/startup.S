@@ -8,8 +8,12 @@
  */
 
 #include "asmdefs.h"
-#include "../obj/header.h"
 
+#ifdef WITH_CMAKE
+  #include "header.h"
+#else
+  #include "../obj/header.h"
+#endif
 // ==== Defines ==============================================================
 
         .equ    cart_base, 0x00fa0000  // Base of ROM port cartridge
