@@ -206,7 +206,7 @@ add_custom_target(bug
 )
 
 add_custom_target(draft
-        COMMAND ${NATIVECC} ${option_definitions} ${CMAKE_SOURCE_DIR}/tools/draft.c ${CMAKE_SOURCE_DIR}/tools/draftexc.c -o draft
+        COMMAND ${NATIVECC} ${option_definitions} -DTARGET_256 ${CMAKE_SOURCE_DIR}/tools/draft.c ${CMAKE_SOURCE_DIR}/tools/draftexc.c -o draft
         DEPENDS ${CMAKE_SOURCE_DIR}/tools/draft.c ${CMAKE_SOURCE_DIR}/tools/draftexc.c
         )
 
