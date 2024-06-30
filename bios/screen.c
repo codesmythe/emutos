@@ -632,6 +632,11 @@ void screen_init_mode(void)
     lisa_screen_init();
 #endif
 
+#ifdef MACHINE_BITSY_V1
+    VEC_VBL = int_vbl;
+    vblsem = 0;
+#endif
+
 #ifdef CONF_SERIAL_CONSOLE
     /* Set the video mode to programs think they're running in an 80-column mode. */
     sshiftmod = ST_HIGH;
