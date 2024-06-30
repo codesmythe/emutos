@@ -36,7 +36,7 @@
 #include "disk.h"
 #include "acsi.h"
 
-#if (CONF_WITH_MONSTER || CONF_WITH_IKBD_CLOCK)
+#if (CONF_WITH_MONSTER || CONF_WITH_IKBD_CLOCK || CONF_WITH_MFP_DS3231)
 static UBYTE int2bcd(UWORD a)
 {
     return (a % 10) + ((a / 10) << 4);
@@ -48,7 +48,7 @@ static UWORD bcd2int(UBYTE a)
 }
 #endif
 
-#if (CONF_WITH_ICDRTC || CONF_WITH_MONSTER || CONF_WITH_MEGARTC || CONF_WITH_NVRAM || CONF_WITH_IKBD_CLOCK || CONF_WITH_ULTRASATAN_CLOCK)
+#if (CONF_WITH_ICDRTC || CONF_WITH_MONSTER || CONF_WITH_MEGARTC || CONF_WITH_NVRAM || CONF_WITH_IKBD_CLOCK || CONF_WITH_ULTRASATAN_CLOCK || CONF_WITH_MFP_DS3231)
 /*
  * structures used by extract_date(), extract_time()
  */
@@ -366,6 +366,109 @@ static void icdsetdt(ULONG dt)
 
 #endif /* CONF_WITH_ICDRTC */
 
+#if CONF_WITH_MFP_DS3231
+
+static inline void set_gpio_as_output(UBYTE num)
+{
+    MFP *mfp = MFP_BASE;
+    mfp->ddr |= (1 << num);
+}
+
+static inline void set_gpio_as_input(UBYTE num)
+{
+    MFP *mfp = MFP_BASE;
+    mfp->ddr &= ~(1 << num);
+}
+
+static inline void set_gpio(UBYTE num)
+{
+    MFP *mfp = MFP_BASE;
+    set_gpio_as_output(num);
+    mfp->gpip |= (1 << num);
+}
+
+static inline void clear_gpio(UBYTE num)
+{
+    MFP *mfp = MFP_BASE;
+    set_gpio_as_output(num);
+    mfp->gpip &= ~(1 << num);
+}
+
+static inline UBYTE read_gpio(UBYTE num)
+{
+MFP *mfp = MFP_BASE;
+set_gpio_as_input(num);
+return (mfp->gpip >> num) & 1;
+}
+
+#define SCL_GPIO 3
+#define SDA_GPIO 5
+
+static ULONG delay5us;
+#define DELAY5US delay_loop(delay5us)
+
+static void i2c_start(void)
+{
+    set_gpio(SDA_GPIO);
+
+    set_gpio(SCL_GPIO);
+
+    clear_gpio(SDA_GPIO);
+
+    clear_gpio(SCL_GPIO);
+}
+
+static void i2c_stop (void)
+{
+    clear_gpio(SCL_GPIO);
+    clear_gpio(SDA_GPIO);
+    set_gpio(SCL_GPIO);
+    DELAY5US;
+    set_gpio(SDA_GPIO);
+}
+
+static void i2c_write (UBYTE data)
+{
+    UBYTE i;
+
+    for(i = 0; i < 8; i++)
+    {
+	if (data & 0x80) set_gpio(SDA_GPIO); else clear_gpio(SDA_GPIO);
+	data <<= 1;
+	set_gpio(SCL_GPIO);
+	DELAY5US;
+	clear_gpio(SCL_GPIO);
+    }
+    /* Set SDA (MFP GPIO5) as input to receive ack. */
+    set_gpio_as_input(SDA_GPIO);
+    set_gpio(SCL_GPIO);
+    DELAY5US;
+    clear_gpio(SCL_GPIO);
+}
+
+static UBYTE i2c_read (void)
+{
+    UBYTE i, data = 0;
+    MFP *mfp = MFP_BASE;
+
+    /* Set SCL as output, SDA as input */
+    //set_gpio_as_output(SCL_GPIO);
+    set_gpio_as_input(SDA_GPIO);
+
+    for(i = 0; i < 8; i++)
+    {
+	data <<= 1;
+	set_gpio(SCL_GPIO);
+	UBYTE bit = mfp->gpip >> SDA_GPIO;
+	data |= (bit & 1);
+	DELAY5US;
+	clear_gpio(SCL_GPIO);
+    }
+    return data;
+}
+
+#endif /* CONF_WITH_MFP_DS321 */
+
 #if CONF_WITH_MONSTER
 
 /*==== MonSTer RTC section ================================================*/
@@ -444,6 +547,16 @@ static UBYTE i2c_read (void)
 
     return data;
 }
+
+#endif
+
+#if (CONF_WITH_MONSTER || CONF_WITH_MFP_DS3231)
+
+/*
+ * We reuse these DS1307 Monster support routines for the DS3231
+ * that might be connected to the MFP since it is compatible with the
+ * DS1307.
+ */
 
 static void write_ds1307(UBYTE address, UBYTE data)
 {
@@ -544,7 +657,7 @@ void detect_monster_rtc(void)
     }
 }
 
-#endif /* CONF_WITH_MONSTER */
+#endif /* CONF_WITH_MONSTER || CONF_WITH_MFP_DS3231 */
 
 #if CONF_WITH_MEGARTC
 
@@ -1237,7 +1350,7 @@ void settime(LONG time)
         msetdt(time);
     }
 #endif /* CONF_WITH_MEGARTC */
-#if CONF_WITH_MONSTER
+#if (CONF_WITH_MONSTER || CONF_WITH_MFP_DS3231)
     else if (has_monster_rtc)
     {
         monstersetdt(time);
@@ -1293,7 +1406,7 @@ LONG gettime(void)
         return mgetdt();
     }
 #endif /* CONF_WITH_MEGARTC */
-#if CONF_WITH_MONSTER
+#if (CONF_WITH_MONSTER || CONF_WITH_MFP_DS3231)
     else if (has_monster_rtc)
     {
         return monstergetdt();

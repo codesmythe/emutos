@@ -939,6 +939,15 @@
 #endif
 
 /*
+ * Set CONF_WITH_MFP_DS3231 to enable support of a DS3231
+ * I2C real time clock chip that is bit-banged from a couple
+ * of MFP GPIO pins.
+ */
+#ifndef CONF_WITH_MFP_DS3231
+# define CONF_WITH_MFP_DS3231 0
+#endif
+
+/*
  * Set CONF_WITH_SCC to 1 to enable SCC support
  */
 #ifndef CONF_WITH_SCC

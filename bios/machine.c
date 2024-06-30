@@ -638,6 +638,10 @@ void machine_detect(void)
         KDEBUG(("has_monster_rtc = %d\n", has_monster_rtc));
     }
 #endif
+#if CONF_WITH_MFP_DS3231
+    detect_monster_rtc();
+    KDEBUG(("has_monster_rtc (MFP DS3231) = %d\n", has_monster_rtc));
+#endif
 #if CONF_WITH_MAGNUM
     detect_magnum();
 #endif
