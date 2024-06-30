@@ -209,8 +209,8 @@ _init_acia_vecs:
 
 #if CONF_WITH_IKBD_ACIA
         // clear any pending data from IKBD ACIA
-        .equ    ikbd_acia_stat, 0xfffffc00
-        .equ    ikbd_acia_data, 0xfffffc02
+        .equ    ikbd_acia_stat, ACIA_IKBD_BASE
+        .equ    ikbd_acia_data, ACIA_IKBD_BASE+2
         move.b  ikbd_acia_data,d0
 #endif
 
