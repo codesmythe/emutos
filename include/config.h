@@ -1025,6 +1025,7 @@
  */
 #ifndef CONF_WITH_MIDI_ACIA
 # define CONF_WITH_MIDI_ACIA 1
+# define ACIA_MIDI_BASE (0xfffffc04L)
 #endif
 
 /*
@@ -1032,6 +1033,7 @@
  */
 #ifndef CONF_WITH_IKBD_ACIA
 # define CONF_WITH_IKBD_ACIA 1
+# define ACIA_IKBD_BASE (0xfffffc00L)
 #endif
 
 /*
