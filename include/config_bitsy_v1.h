@@ -42,9 +42,10 @@
 #  define CONF_WITH_MFP_3X_CLOCK 1
 # endif
 
-# ifndef CONF_WITH_NVRAM
-#  define CONF_WITH_NVRAM 1
+# ifndef CONF_WITH_MFP_DS3231
+#  define CONF_WITH_MFP_DS3231 1
 # endif
+
 # ifndef CONF_WITH_YM2149
 #  define CONF_WITH_YM2149 1
 # endif
@@ -73,6 +74,12 @@
 # ifndef CONF_SERIAL_CONSOLE_POLLING_MODE
 #  define CONF_SERIAL_CONSOLE_POLLING_MODE 1
 # endif
+
+# ifndef CONF_WITH_IKBD_ACIA
+#  define CONF_WITH_IKBD_ACIA 0
+#  define ACIA_IKBD_BASE (0xFFFF0031L)
+# endif
+
 
 # ifndef USE_STOP_INSN_TO_FREE_HOST_CPU
 #  define USE_STOP_INSN_TO_FREE_HOST_CPU 0
