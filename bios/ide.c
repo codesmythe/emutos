@@ -429,7 +429,7 @@ static void set_packet_size(WORD dev,UWORD config);
  * we do not check for the FireBee, since there are always exactly
  * two interfaces, or for non-Atari hardware.
  */
-#if CONF_ATARI_HARDWARE && !defined(MACHINE_FIREBEE)
+#if (CONF_ATARI_HARDWARE || CONF_ATARI_IDE) && !defined(MACHINE_FIREBEE)
 
 /* used by duplicate interface detection logic */
 #define SECNUM_MAGIC    0xcc
@@ -661,7 +661,7 @@ void ide_init(void)
     if (!has_ide)
         return;
 
-#if CONF_ATARI_HARDWARE && !defined(MACHINE_FIREBEE)
+#if (CONF_ATARI_HARDWARE || CONF_ATARI_IDE) && !defined(MACHINE_FIREBEE)
     /* Reject 'ghost' interfaces & detect twisted cables.
      * We wait a max time for BSY to drop on all IDE interface
      * since this is called during initialisation, which can be
