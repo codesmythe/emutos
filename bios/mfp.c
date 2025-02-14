@@ -25,7 +25,6 @@
 
 static void reset_mfp_regs(MFP *mfp)
 {
-    volatile UBYTE *p;
     /*
      * The following writes zeroes to everything except the UDR (anything
      * written to the UDR would be sent as soon as the baud rate clock
@@ -33,8 +32,11 @@ static void reset_mfp_regs(MFP *mfp)
      * because some buggy emulators (I'm looking at you, STonXDOS)
      * generate bus errors there.
      */
+#ifndef CONF_WITH_EARLY_MFP
+    volatile UBYTE *p;
     for (p = &mfp->gpip; p <= &mfp->tsr; p += 2)
         *p = 0;
+#endif
 }
 
 static void disable_mfp_interrupt(MFP *mfp, WORD num)

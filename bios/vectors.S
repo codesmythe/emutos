@@ -487,7 +487,7 @@ vbl_end:
         addq.w  #1,_vblsem.w
 #endif
 
-#if CONF_WITH_ATARI_VIDEO
+#if CONF_WITH_ATARI_VIDEO || CONF_WITH_VBL_RTE
         rte
 #else
         rts

@@ -46,6 +46,14 @@
 #  define CONF_WITH_MFP_DS3231 1
 # endif
 
+# ifndef CONF_WITH_EARLY_MFP
+#  define CONF_WITH_EARLY_MFP 1
+# endif
+
+# ifndef CONF_WITH_VBL_RTE
+#  define CONF_WITH_VBL_RTE 1
+# endif
+
 # ifndef CONF_WITH_YM2149
 #  define CONF_WITH_YM2149 1
 # endif

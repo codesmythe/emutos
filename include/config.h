@@ -925,6 +925,14 @@
 #endif
 
 /*
+ * Set CONF_WITH_EARLY_MFP to 1 to initialize the MFP "early" in the
+ * start up code.
+ */
+#ifndef CONF_WITH_EARLY_MFP
+# define CONF_WITH_EARLY_MFP 0
+#endif
+
+/*
  * Set CONF_WITH_MFP_RS232 to 1 to enable MFP RS-232 support
  */
 #ifndef CONF_WITH_MFP_RS232
@@ -1106,6 +1114,14 @@
  */
 #ifndef CONF_WITH_VAMPIRE_SPI
 # define CONF_WITH_VAMPIRE_SPI 0
+#endif
+
+/*
+ * Set CONF_WITH_VBL_RTE to 1 to cause the VBL handler to end with an RTE
+ * instruction instead of an RTS instruction.
+ */
+#ifndef CONF_WITH_VBL_RTE
+# define CONF_WITH_VBL_RTE 0
 #endif
 
 /*
