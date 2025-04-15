@@ -104,4 +104,16 @@
 #  define DEFAULT_BAUDRATE B19200
 # endif
 
+#ifndef TOS_VERSION
+# define TOS_VERSION 0x404 /* For 3D object support. */
+#endif
+
+# ifndef CONF_WITH_3D_OBJECT
+#  define CONF_WITH_3D_OBJECTS 1
+# endif
+
+# ifndef CONF_WITH_COLOUR_ICONS
+#  define CONF_WITH_COLOUR_ICONS 1
+# endif
+
 #endif
