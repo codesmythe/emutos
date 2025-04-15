@@ -185,7 +185,7 @@ _init_acia_vecs:
         move.l  #_midisys,midisys-_kbdvecs(a1)
 #endif
 #endif /* CONF_WITH_MIDI_ACIA */
-#if CONF_WITH_IKBD_ACIA
+#if CONF_WITH_IKBD_ACIA || CONF_WITH_IKBD_ACE
 #ifdef __mcoldfire__
         move.l  #_ikbdsys,d0
         move.l  d0,ikbdsys-_kbdvecs(a1)
@@ -214,6 +214,20 @@ _init_acia_vecs:
         move.b  ikbd_acia_data,d0
 #endif
 
+#if CONF_WITH_IKBD_ACE
+        // clear any pending data from the 16C550 UART
+        // by reading various UART registers
+        .equ    ikbd_ace_rbr,ACE_UART_BASE
+        .equ    ikbd_ace_ier,ACE_UART_BASE+2
+        .equ    ikbd_ace_iir,ACE_UART_BASE+4
+        .equ    ikbd_ace_lsr,ACE_UART_BASE+10
+        .equ    ikbd_ace_msr,ACE_UART_BASE+12
+
+        move.b  ikbd_ace_rbr,d0
+        move.b  ikbd_ace_lsr,d0
+        move.b  ikbd_ace_msr,d0
+#endif
+
 #if CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA
         // finally, setup the interrupt vector
         pea     _int_acia
@@ -221,6 +235,16 @@ _init_acia_vecs:
         jsr     _mfpint
         addq.l  #6,sp
 #endif /* CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA */
+
+#if CONF_WITH_IKBD_ACE
+        // Setup the interrupt vector
+        pea     _int_ace
+        move.w  #6,-(sp)
+        jsr     _mfpint
+        addq.l  #6,sp
+        // Enable the ACE UART receive interrupt
+        move.b  #1,ikbd_ace_ier
+#endif
 
 #ifdef MACHINE_AMIGA
         jsr     _amiga_init_keyboard_interrupt
@@ -240,6 +264,25 @@ iorec_table:
         .dc.w   midi_bufsize,  0,  0, midi_bufsize/4, 3*midi_bufsize/4
 iorec_table_end:
         .text
+
+#if CONF_WITH_IKBD_ACE
+_int_ace:
+        movem.l d0-d3/a0-a3,-(sp)
+int_ace_loop:
+        // Check that there is a byte to receive (LSR bit 0 [DR] == 1)
+        lea     ikbd_ace_lsr,a0
+        btst.b  #0,(a0)
+        beq     int_ace_done
+        // Process the byte and loop
+        move.l  ikbdsys,a0
+        jsr     (a0)
+        bra     int_ace_loop
+int_ace_done:
+        lea     0xfffffa00.w,a0
+        move.b  #0xbf,0x11(a0)            // clear MFP in service bit
+        movem.l (sp)+,d0-d3/a0-a3
+        rte
+#endif
 
 #if CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA
 
@@ -376,6 +419,28 @@ _kbdvec:
         addq.l  #2,sp
 just_rts:
         rts
+
+#if CONF_WITH_IKBD_ACE
+
+_ikbdsys:
+        // Check that the Data Ready bit (bit 0) in the Line Status Register is set.
+        moveq   #0,d1
+        move.b  ikbd_ace_lsr,d1
+        btst.b  #0,d1
+        beq     ikbdrts
+        move.w  d1,-(sp)                // save line status byte across ikbdraw call
+        moveq   #0,d0
+        move.b  ikbd_ace_rbr,d0
+        jsr     ikbdraw
+        move.w  (sp)+,d0                // d0 = line status byte
+        btst.b  #1,d0                   // receiver overrun ?
+        beq     ikbdrts                 // no, done
+        move.b  ikbd_ace_rbr,d0         // get data byte again
+        move.l  vkbderr,a0
+        jsr     (a0)                    // call vkbderr
+ikbdrts:
+        rts
+#endif
 
 #if CONF_WITH_IKBD_ACIA
 

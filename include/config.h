@@ -1061,6 +1061,12 @@
 #endif
 
 /*
+ * Set CONF_WITH_IKBD_ACE to 1 to enable IKBD ACE (16C550) support.
+ */
+#ifndef CONF_WITH_IKBD_ACE
+# define CONF_WITH_IKBD_ACE 0
+#endif
+/*
  * Set CONF_WITH_CARTRIDGE to 1 to enable ROM port cartridge support
  */
 #ifndef CONF_WITH_CARTRIDGE

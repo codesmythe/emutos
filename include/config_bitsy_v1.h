@@ -88,6 +88,10 @@
 #  define ACIA_IKBD_BASE (0xFFFF0031L)
 # endif
 
+# ifndef CONF_WITH_IKBD_ACE
+#  define CONF_WITH_IKBD_ACE 1
+#  define ACE_UART_BASE (0xFFFF0191L)
+# endif
 
 # ifndef USE_STOP_INSN_TO_FREE_HOST_CPU
 #  define USE_STOP_INSN_TO_FREE_HOST_CPU 0

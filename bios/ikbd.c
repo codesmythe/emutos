@@ -40,6 +40,7 @@
 #include "serport.h"
 #include "amiga.h"
 #include "lisa.h"
+#include "ace_uart.h"
 
 
 /* forward declarations */
@@ -925,6 +926,13 @@ LONG bcostat4(void)
     }
 #elif CONF_WITH_FLEXCAN
     return -1; /* Always OK */
+#elif CONF_WITH_IKBD_ACE
+    if (ikbd_ace.lsr & ACE_LSR_THRE) {
+        return -1;              /* OK */
+    } else {
+        /* Data register not empty */
+        return 0;               /* not OK */
+    }
 #else
     return -1; /* OK (but output will be ignored) */
 #endif
@@ -966,6 +974,8 @@ void ikbd_writeb(UBYTE b)
     coldfire_flexcan_ikbd_writeb(b);
 #elif defined(MACHINE_AMIGA)
     amiga_ikbd_writeb(b);
+#elif CONF_WITH_IKBD_ACE
+    ikbd_ace.rbr_thr_divlsb = b;
 #endif
 }
 
@@ -995,6 +1005,18 @@ static UBYTE ikbd_readb(WORD timeout)
         delay_loop(loopcount_1_msec);
     }
 
+    return 0; /* bogus value when timeout */
+#elif CONF_WITH_IKBD_ACE
+    WORD i;
+
+    /* We have to use a timeout to avoid waiting forever
+     * if the keyboard is unplugged.
+     */
+    for (i = 0; i < timeout; i++) {
+        if (ikbd_ace.lsr & ACE_LSR_DR)
+            return ikbd_ace.rbr_thr_divlsb;
+        delay_loop(loopcount_1_msec);
+    }
     return 0; /* bogus value when timeout */
 #else
     return 0; /* bogus value */
@@ -1055,6 +1077,27 @@ static void ikbd_reset(void)
         ;
 }
 
+#ifdef CONF_WITH_IKBD_ACE
+static void init_uart_ace(volatile struct ACE_UART *ace)
+{
+    // Divisor = freq_in / baud * 16 = 7372800 / 9600 * 16 = 48
+    ace->ier_divmsb = 0; // Clear Interrupt Enable Register
+    ace->lcr = 0x80; // Set DLAB flag
+    ace->rbr_thr_divlsb = 48; // Set to 48 => 9600 baud with 7.3728 MHz clock.
+    ace->ier_divmsb = 0;
+    ace->lcr = 0; // Clear Divisor Latch Bit (DLAB;
+    ace->lcr = 0x3; // Set 8 bit data, 1 stop bit;
+    // Disabling the FIFO because I can't get it to work.
+    ace->fifo_iir = 0x06; // Clear both FIFO, set trigger level to 1 byte
+    ace->fifo_iir = 0x00; // Disable the FIFO
+    ace->mcr = 0x03; // Assert RTS and DTR.
+    (void) ace->lsr; // Read Line Status Register to clear any pending interrupts.
+    (void) ace->msr; // Read Modem Status Register to clear any pending interrupts.
+    (void) ace->rbr_thr_divlsb; // Read the Receive Buffer Register to clear any pending interrupts.
+    ace->ier_divmsb = 0x00; // Enable receive interrupt.
+}
+#endif
+
 /*
  *      FUNCTION:  This routine resets the keyboard,
  *        configures the MFP so we can get interrupts
@@ -1084,6 +1127,11 @@ void kbd_init(void)
 #ifdef MACHINE_LISA
     lisa_kbd_init();
 #endif
+
+#if CONF_WITH_IKBD_ACE
+    /* Initialize the ACE interface to keyboard. */
+    init_uart_ace(&ikbd_ace);
+#endif /* CONF_WITH_IKBD_ACE */
 
     /* initialize the IKBD */
     ikbd_reset();
