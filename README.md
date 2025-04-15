@@ -8,11 +8,14 @@ include
 
 - The [Rosco M68K Classic V2](https://rosco-m68k.com) board.
 
+- Steve Crompton's [Mega 68K series of boards](https://www.mega-micros.co.uk/index_68030.htm).
+
 The features added in this branch relative to upstream EmuTOS include:
 
 - Full support for the MC68681 Dual UART and modern variants like the
   XR68C681.  This includes interrupt-driven receive, flow control,
-  `rsconf()` and `bconmap()` support.
+  `rsconf()`, and `bconmap()` support and the ability to run the DUART at 
+  double the usual speed.
 
 - Fixes to support 8-bit IDE interfaces and IDE interfaces that do not
   support software reset.
@@ -20,6 +23,11 @@ The features added in this branch relative to upstream EmuTOS include:
 - Changes to serial console mode to force 80-column mode.
 
 - The ability to run the MC68901 MFP at triple speed.
+
+- The ability to use the TL 16C550 UART as the source of IKBD events. 
+
+- Support for using a I2C DS3231 real-time clock chip, bit-banged
+  off MFP GPIO pins.
 
 - A preliminary attempt at a CMake-based build process.
 
@@ -50,7 +58,8 @@ mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake ..
 
 # Build the Tiny68K variant
-# Other valid targets at the moment are `rosco_v2.bin` and `roberts7531.bin`
+# Other valid targets at the moment are `rosco_v2.bin`,
+#   `roberts7531.bin` and `mega-68000.bin`.
 make tiny68k.bin
 ```
 

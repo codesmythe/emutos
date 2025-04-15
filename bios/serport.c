@@ -1258,6 +1258,15 @@ void duart_init_system_timer(void)
      */
     write_duart(DUART_CTLR, 0x40);
     write_duart(DUART_CTUR, 0x02);
+#ifdef MACHINE_MEGA_68000
+    /*
+     * The MEGA 68000 has its DUART clocked at twice the usual speed, or
+     * 7.3728 MHz. So to get a 5ms timer from that, the calculation is
+     * 5e-3 * 7.3728e6 / 32.0 = 1152d  = 0x480
+     */
+    write_duart(DUART_CTLR, 0x80);
+    write_duart(DUART_CTUR, 0x04);
+#endif
 
     duart_init_interrupts_common();
 }

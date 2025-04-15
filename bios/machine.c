@@ -863,6 +863,8 @@ static const char * guess_machine_name(void)
         return "BITSY V1";
     case MCH_ROBERTS7531:
         return "@ROBERTS7531";
+    case MCH_MEGA_68000:
+        return "MEGA 68000";
     default:
         return "unknown";
     }
@@ -883,6 +885,8 @@ const char * machine_name(void)
     return "ROSCO M68K Classic V2";
 #elif defined(MACHINE_ROBERTS_7531)
     return "@ROBERTS7531 V1";
+#elif defined(MACHINE_MEGA_68000)
+    return "MEGA 68000";
 #elif defined(MACHINE_TINY68K)
     return "Tiny68K";
 #else
