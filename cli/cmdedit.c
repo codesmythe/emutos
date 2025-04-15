@@ -189,6 +189,10 @@ void save_history(const char *line)
         history_num = 0;
 }
 
+#define CONTROL_P 0x1910
+#define CONTROL_N 0x310E
+#define CONTROL_F 0x2106
+#define CONTROL_B 0x3002
 /*
  *  top level line editing routine
  */
@@ -200,12 +204,14 @@ WORD n, word = 0;
 
     switch(scancode) {
     case ARROW_UP:
+    case CONTROL_P:
         if (history_num >= 0) {
             erase_line(line,*pos);
             *pos = *len = previous_history(line);
         }
         break;
     case ARROW_DOWN:
+    case CONTROL_N:
         if (history_num >= 0) {
             erase_line(line,*pos);
             *pos = *len = next_history(line);
@@ -215,6 +221,7 @@ WORD n, word = 0;
         word = 1;
         FALLTHROUGH;
     case ARROW_LEFT:
+    case CONTROL_B:
         if (*pos > 0) {
             n = word ? previous_word_count(line,*pos) : 1;
             while (n-- > 0) {
@@ -227,6 +234,7 @@ WORD n, word = 0;
         word = 1;
         FALLTHROUGH;
     case ARROW_RIGHT:
+    case CONTROL_F:
         if (*pos < *len) {
             n = word ? next_word_count(line,*pos,*len) : 1;
             while (n-- > 0) {

@@ -22,12 +22,15 @@ The features added in this branch relative to upstream EmuTOS include:
 
 - Changes to serial console mode to force 80-column mode.
 
-- The ability to run the MC68901 MFP at triple speed.
+- Support for running the MC68901 MFP at triple speed.
 
-- The ability to use the TL 16C550 UART as the source of IKBD events. 
+- Support for the TL 16C550 UART as a source of IKBD events. 
 
 - Support for using a I2C DS3231 real-time clock chip, bit-banged
   off MFP GPIO pins.
+
+- Support for using a few Emacs-style control keys in EmuCON 
+  for accessing command line history.
 
 - A preliminary attempt at a CMake-based build process.
 
