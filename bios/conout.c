@@ -24,7 +24,7 @@
 #include "string.h"
 #include "conout.h"
 
-
+#if !CONF_WITH_XOSERA_CONSOLE
 
 #define PLANE_OFFSET    2       /* interleaved planes */
 
@@ -602,3 +602,5 @@ void scroll_down(UWORD start_line)
     /* exit thru blank out */
     blank_out(0, start_line , v_cel_mx, start_line);
 }
+
+#endif

@@ -1285,6 +1285,13 @@
 # endif
 #endif
 
+/*
+ * Set CONF_WITH_XOSERA_CONSOLE to 1 to enable the EmuTOS console
+ * to display on the Xosera video card.
+ */
+#ifndef CONF_WITH_XOSERA_CONSOLE
+# define CONF_WITH_XOSERA_CONSOLE 0
+#endif
 
 
 /****************************************************

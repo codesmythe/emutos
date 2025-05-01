@@ -93,6 +93,9 @@ void init_delay(void)
  */
 void calibrate_delay(void)
 {
+#if defined(MACHINE_BITSY_V1)
+    return;
+#endif
 #if CONF_WITH_MFP
     ULONG loopcount, intcount;
 

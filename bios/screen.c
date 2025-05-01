@@ -41,6 +41,7 @@
 #include "amiga.h"
 #include "lisa.h"
 #include "nova.h"
+#include "xosera.h"
 
 void detect_monitor_change(void);
 static void setphys(const UBYTE *addr);
@@ -628,6 +629,10 @@ void screen_init_mode(void)
     amiga_screen_init();
 #endif
 
+#ifdef CONF_WITH_XOSERA_CONSOLE
+    xosera_screen_init();
+#endif
+
 #ifdef MACHINE_LISA
     lisa_screen_init();
 #endif
@@ -820,6 +825,10 @@ void screen_get_current_mode_info(UWORD *planes, UWORD *hz_rez, UWORD *vt_rez)
     *planes = 1;
     *hz_rez = 720;
     *vt_rez = 364;
+#elif CONF_WITH_XOSERA_CONSOLE
+    *planes = 1;
+    *hz_rez = 640;
+    *vt_rez = 240;
 #else
     atari_get_current_mode_info(planes, hz_rez, vt_rez);
 #endif

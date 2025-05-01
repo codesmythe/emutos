@@ -80,6 +80,8 @@ if (COLDFIRE)
     set(bios_src ${bios_src} bios/codefile.c bios/coldfile2.S spi_cf.c)
 endif()
 
+set(bios_src ${bios_src} bios/conout_xosera.c bios/xosera.c)
+
 #
 # source code in bdos/
 #
