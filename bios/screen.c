@@ -629,7 +629,7 @@ void screen_init_mode(void)
     amiga_screen_init();
 #endif
 
-#ifdef CONF_WITH_XOSERA_CONSOLE
+#if CONF_WITH_XOSERA_CONSOLE
     xosera_screen_init();
 #endif
 
@@ -642,7 +642,7 @@ void screen_init_mode(void)
     vblsem = 0;
 #endif
 
-#ifdef CONF_SERIAL_CONSOLE
+#if CONF_SERIAL_CONSOLE
     /* Set the video mode to programs think they're running in an 80-column mode. */
     sshiftmod = ST_HIGH;
     /* Prevent resolution changes. */
