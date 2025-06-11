@@ -216,7 +216,7 @@ add_custom_target(mrd
         DEPENDS ${CMAKE_SOURCE_DIR}/tools/erd.c
 )
 
-set(POFILES po/cs.po po/de.po po/es.po po/fi.po po/fr.po po/gr.po po/hu.po po/it.po po/nl.po po/pl.po po/ro.po po/ru.po po/tr.po)
+set(POFILES po/ca.po po/cs.po po/de.po po/es.po po/fi.po po/fr.po po/gr.po po/hu.po po/it.po po/nl.po po/pl.po po/ro.po po/ru.po po/tr.po)
 
 function(configure_target target_name target_define rom_size optflags unique)
     cmake_parse_arguments(CONFIG "" "WITH_AES;WITH_CLI" "" ${ARGN})
