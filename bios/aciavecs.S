@@ -74,10 +74,14 @@
         .extern _mfpint
         .extern _kbd_int
         .extern _amiga_init_keyboard_interrupt
+        .extern _duart_imr_val
 
         .globl  _init_acia_vecs
 #if CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA
         .globl  _int_acia
+#endif
+#if CONF_WITH_IKBD_DUART
+        .globl  _int_ikbd_duart
 #endif
 
 #if CONF_WITH_EXTENDED_MOUSE
@@ -185,7 +189,7 @@ _init_acia_vecs:
         move.l  #_midisys,midisys-_kbdvecs(a1)
 #endif
 #endif /* CONF_WITH_MIDI_ACIA */
-#if CONF_WITH_IKBD_ACIA || CONF_WITH_IKBD_ACE
+#if CONF_WITH_IKBD_ACIA || CONF_WITH_IKBD_ACE || CONF_WITH_IKBD_DUART
 #ifdef __mcoldfire__
         move.l  #_ikbdsys,d0
         move.l  d0,ikbdsys-_kbdvecs(a1)
@@ -228,6 +232,21 @@ _init_acia_vecs:
         move.b  ikbd_ace_msr,d0
 #endif
 
+#if CONF_WITH_IKBD_DUART
+        .equ    duart_srb,DUART_BASE+0x13
+        .equ    duart_rhrb,DUART_BASE+0x17
+        .equ    duart_imr,DUART_BASE+0x0B
+
+        // clean any pending data from the DUART PORT B
+ikbd_duart_clear:
+        move.b  duart_srb,d0
+        btst.b  #0,d0             // Check RXRDY
+        beq     ikbd_duart_clear_done
+        move.b  duart_rhrb,d0     // There a character. Read it and discard.
+        bra     ikbd_duart_clear  // Keep reading until no more characters
+ikbd_duart_clear_done:
+#endif
+
 #if CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA
         // finally, setup the interrupt vector
         pea     _int_acia
@@ -244,6 +263,14 @@ _init_acia_vecs:
         addq.l  #6,sp
         // Enable the ACE UART receive interrupt
         move.b  #1,ikbd_ace_ier
+#endif
+
+#if CONF_WITH_IKBD_DUART
+        // The interrupt vector has already been setup in serport.c,
+        // but we need to enable the interrupt here.
+        move.b  _duart_imr_val,d0
+        ori.b   #0x20,d0
+        move.b  d0,duart_imr
 #endif
 
 #ifdef MACHINE_AMIGA
@@ -282,6 +309,24 @@ int_ace_done:
         move.b  #0xbf,0x11(a0)            // clear MFP in service bit
         movem.l (sp)+,d0-d3/a0-a3
         rte
+#endif
+
+#if CONF_WITH_IKBD_DUART
+_int_ikbd_duart:
+        movem.l d0-d3/a0-a3,-(sp)
+int_ikbd_duart_loop:
+        // Check that there is a byte to receive (Status B bit 0 [RXRDY] == 1)
+        move.b  duart_srb,d1            // D1 := DUART Status Register B
+        btst.b  #0, d1                  // Check bit 0, which is RXRDY
+        beq     int_ikbd_duart_done     // Not ready, so just return
+        // Process the byte and loop
+        move.l  ikbdsys,a0
+        jsr     (a0)
+        bra     int_ikbd_duart_loop
+int_ikbd_duart_done:
+        // Having read the received byte is enough to acknowledge the DUART interrupt.
+        movem.l (sp)+,d0-d3/a0-a3
+        rts
 #endif
 
 #if CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA
@@ -438,6 +483,28 @@ _ikbdsys:
         move.b  ikbd_ace_rbr,d0         // get data byte again
         move.l  vkbderr,a0
         jsr     (a0)                    // call vkbderr
+ikbdrts:
+        rts
+#endif
+
+#if CONF_WITH_IKBD_DUART
+_ikbdsys:
+        // Check that the DUART actually has data available by checking RXRDY
+        moveq   #0, d1                  // Clear all of D1
+        move.b  duart_srb,d1            // D1 := DUART Status Register B
+        btst.b  #0, d1                  // Check bit 0, which is RXRDY
+        beq     ikbdrts                 // Not ready, so just return
+        move.w  d1,-(sp)                // Save status across ikbdraw call
+        moveq   #0, d0                  // Clear all of D0
+        move.b  duart_rhrb,d0           // Received character into D0
+        move.w  d0,-(sp)                // Save received character
+        jsr     ikbdraw
+        move.w  (sp)+,d0                // Restore received character
+        move.w  (sp)+,d1                // Restore status register
+        and.b   #0xF0,d1                // Any error bits set?
+        beq     ikbdrts                 // No, so we are done.
+        move.l  vkbderr,a0
+        jsr     (a0)                    // Call vkbderr error function
 ikbdrts:
         rts
 #endif

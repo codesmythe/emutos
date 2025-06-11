@@ -1067,6 +1067,15 @@
 #ifndef CONF_WITH_IKBD_ACE
 # define CONF_WITH_IKBD_ACE 0
 #endif
+
+/*
+ * Set CONF_WITH_IKBD_DUART to 1 to enable IKBD support via
+ * Channel B of the MC68681 DUART.
+ */
+#ifndef CONF_WITH_IKBD_DUART
+# define CONF_WITH_IKBD_DUART 0
+#endif
+
 /*
  * Set CONF_WITH_CARTRIDGE to 1 to enable ROM port cartridge support
  */

@@ -100,6 +100,7 @@
         .extern _savptr
         .extern _xbios_do_unimpl
         .extern _kcl_hook
+        .extern _int_ikbd_duart
 
         .text
 
@@ -841,13 +842,14 @@ duart_check_rx_2:
         beq     duart_check_channel_b  // No, but check channel B
 #endif
         jbsr    _duart_rs232_interrupt_handler_channel_a
-#ifdef CONF_WITH_DUART_CHANNEL_B
 duart_check_channel_b:
         lea     DUART_BASE, a0
         move.b  11(a0), d0            // Get the ISR again
         btst.b  #5, d0                // Is the Chan B Receive Ready (bit 5) set?
         beq     duart_intr_done
-
+#if CONF_WITH_IKBD_DUART
+        jbsr    _int_ikbd_duart
+#elif CONF_WITH_DUART_CHANNEL_B
         jbsr    _duart_rs232_interrupt_handler_channel_b
 #endif
 duart_intr_done:

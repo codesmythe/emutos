@@ -87,6 +87,9 @@ static ULONG rsconfDUARTB(WORD baud, WORD ctrl, WORD ucr, WORD rsr, WORD tsr, WO
 /*
  * global variables
  */
+
+UBYTE duart_imr_val;
+
 ULONG (*rsconfptr)(WORD,WORD,WORD,WORD,WORD,WORD);
 EXT_IOREC *rs232iorecptr;
 
@@ -1242,10 +1245,11 @@ static void duart_init_interrupts_common(void)
 #if CONF_DUART_TIMER_C
     IMR_value |= DUART_IMR_COUNTER_READY;
 #endif
-#if CONF_WITH_DUART_CHANNEL_B
+#if CONF_WITH_DUART_CHANNEL_B && !CONF_WITH_IKBD_DUART
     IMR_value |= DUART_IMR_RXRDY_B;
 #endif
     /* Enable the interrupt(s). */
+    duart_imr_val = IMR_value;
     write_duart(DUART_IMR, IMR_value);
 }
 
@@ -1529,9 +1533,10 @@ void init_serport(void)
 #endif /* CONF_WITH_DUART_CHANNEL_B */
     if (has_duart) {
         //rsconfDUARTA(DEFAULT_BAUDRATE, 0, 0x88, 0, 0, 0);
-#if CONF_WITH_DUART_CHANNEL_B
+#if CONF_WITH_IKBD_DUART
+        rsconfDUARTB(B4800, 0, 0x88, 0, 0, 0);
+#elif CONF_WITH_DUART_CHANNEL_B
         rsconfDUARTB(DEFAULT_BAUDRATE, 0, 0x88, 0, 0, 0);
-	bconoutDUARTB(0, '*');
 #endif
     }
 #endif /* CONF_WITH_DUART */

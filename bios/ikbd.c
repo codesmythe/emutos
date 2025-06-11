@@ -41,6 +41,7 @@
 #include "amiga.h"
 #include "lisa.h"
 #include "ace_uart.h"
+#include "duart68681.h"
 
 
 /* forward declarations */
@@ -976,6 +977,9 @@ void ikbd_writeb(UBYTE b)
     amiga_ikbd_writeb(b);
 #elif CONF_WITH_IKBD_ACE
     ikbd_ace.rbr_thr_divlsb = b;
+#elif CONF_WITH_IKBD_DUART
+    volatile UBYTE *duart_base = (volatile UBYTE *) DUART_BASE;
+    duart_base[DUART_THRB] = b;
 #endif
 }
 
@@ -1015,6 +1019,16 @@ static UBYTE ikbd_readb(WORD timeout)
     for (i = 0; i < timeout; i++) {
         if (ikbd_ace.lsr & ACE_LSR_DR)
             return ikbd_ace.rbr_thr_divlsb;
+        delay_loop(loopcount_1_msec);
+    }
+    return 0; /* bogus value when timeout */
+#elif CONF_WITH_IKBD_DUART
+    WORD i;
+    volatile UBYTE *duart_base = (volatile UBYTE *) DUART_BASE;
+    for (i = 0; i < timeout; i++) {
+        if (duart_base[DUART_SRB] & DUART_SR_RXRDY) {
+            return duart_base[DUART_RHRB];
+        }
         delay_loop(loopcount_1_msec);
     }
     return 0; /* bogus value when timeout */
@@ -1077,7 +1091,7 @@ static void ikbd_reset(void)
         ;
 }
 
-#ifdef CONF_WITH_IKBD_ACE
+#if CONF_WITH_IKBD_ACE
 static void init_uart_ace(volatile struct ACE_UART *ace)
 {
     // Divisor = freq_in / baud * 16 = 7372800 / 9600 * 16 = 48
