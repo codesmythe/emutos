@@ -239,33 +239,32 @@ LONG bconstat2(void)
 {
 #if CONF_SERIAL_CONSOLE_POLLING_MODE
     /* Poll the serial port */
-    return bconstat(1);
-#else
+    LONG stat = bconstat(1);
+    if (stat != 0) return stat;
+#endif
     /* Check the IKBD IOREC */
     if (ikbdiorec.head == ikbdiorec.tail) {
         return 0;               /* iorec empty */
     } else {
         return -1;              /* not empty => input available */
     }
-#endif
 }
 
 LONG bconin2(void)
 {
     ULONG value;
-#if CONF_SERIAL_CONSOLE_POLLING_MODE
-    /* Poll the serial port */
-    UBYTE ascii = (UBYTE)bconin(1);
-    value = ikbdiorec_from_ascii(ascii);
-#else
-    /* Check the IKBD IOREC */
-    WORD old_sr;
 
     while (!bconstat2()) {
 #if USE_STOP_INSN_TO_FREE_HOST_CPU
         stop_until_interrupt();
 #endif
     }
+#if CONF_SERIAL_CONSOLE_POLLING_MODE
+    /* Poll the serial port */
+    UBYTE ascii = (UBYTE)bconin(1);
+    value = ikbdiorec_from_ascii(ascii);
+#else
+    WORD old_sr;
     /* disable interrupts */
     old_sr = set_sr(0x2700);
 
@@ -274,10 +273,9 @@ LONG bconin2(void)
         ikbdiorec.head = 0;
     }
     value = *(ULONG_ALIAS *) (ikbdiorec.buf + ikbdiorec.head);
-
     /* restore interrupts */
     set_sr(old_sr);
-#endif /* CONF_SERIAL_CONSOLE_POLLING_MODE */
+#endif
 
     if (!(conterm & 8))         /* shift status not wanted? */
         value &= 0x00ffffffL;   /* true, so clean it out */

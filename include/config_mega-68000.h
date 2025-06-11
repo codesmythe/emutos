@@ -39,6 +39,9 @@
 # ifndef CONF_WITH_DUART_CHANNEL_B
 #  define CONF_WITH_DUART_CHANNEL_B 1
 # endif
+# ifndef CONF_WITH_IKBD_DUART
+#  define CONF_WITH_IKBD_DUART 1
+# endif
 # ifndef CONF_DUART_TIMER_C
 #  define CONF_DUART_TIMER_C 1
 # endif
@@ -91,7 +94,7 @@
 #  endif
 # endif
 # ifndef CONF_SERIAL_CONSOLE_POLLING_MODE
-#  define CONF_SERIAL_CONSOLE_POLLING_MODE 1
+#  define CONF_SERIAL_CONSOLE_POLLING_MODE 0
 # endif
 
 # ifndef USE_STOP_INSN_TO_FREE_HOST_CPU
