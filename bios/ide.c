@@ -1102,6 +1102,8 @@ static void ide_get_data(volatile struct IDE *interface,UBYTE *buffer,ULONG buff
 
     KDEBUG(("ide_get_data(intf=%p, buf=%p, len=%lu, need_byteswap=%d)\n", interface, buffer, bufferlen, need_byteswap));
 
+    DELAY_400NS; /* Added by STEVE CROMPTON 19/04/2025 - Fix for Mega-68030 SBC-3 @ 40MHz */
+
 #if CONF_WITH_APOLLO_68080
     if (is_apollo_68080)
     {
