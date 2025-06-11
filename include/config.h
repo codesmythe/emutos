@@ -6,7 +6,7 @@
  * Defines that should *not* be overridden should appear in sysconf.h
  * (or deskconf.h if they apply to EmuDesk).
  *
- * Copyright (C) 2001-2022 The EmuTOS development team
+ * Copyright (C) 2001-2025 The EmuTOS development team
  *
  * Authors:
  *  MAD     Martin Doering
@@ -59,6 +59,9 @@
  * Defaults for the ARAnyM target
  */
 #ifdef MACHINE_ARANYM
+# ifndef CONF_WITH_VDI_16BIT
+#  define CONF_WITH_VDI_16BIT 1
+# endif
 # ifndef CONF_WITH_APOLLO_68080
 #  define CONF_WITH_APOLLO_68080 0
 # endif
@@ -122,6 +125,9 @@
  * Defaults for the FireBee target
  */
 #ifdef MACHINE_FIREBEE
+# ifndef CONF_WITH_ST_MMU
+#  define CONF_WITH_ST_MMU 0
+# endif
 # ifndef CONF_WITH_TT_MMU
 #  define CONF_WITH_TT_MMU 0
 # endif
@@ -352,6 +358,9 @@
 # ifndef CONF_WITH_EXTENDED_MOUSE
 #  define CONF_WITH_EXTENDED_MOUSE 0
 # endif
+# ifndef CONF_WITH_VDI_16BIT
+#  define CONF_WITH_VDI_16BIT 0
+# endif
 # ifndef CONF_WITH_VDI_VERTLINE
 #  define CONF_WITH_VDI_VERTLINE 0
 # endif
@@ -430,6 +439,9 @@
 # ifndef CONF_WITH_MENU_EXTENSION
 #  define CONF_WITH_MENU_EXTENSION 0
 # endif
+# ifndef CONF_WITH_VDI_16BIT
+#  define CONF_WITH_VDI_16BIT 0
+# endif
 # ifndef MAX_VERTICES
 #  define MAX_VERTICES 512
 # endif
@@ -490,6 +502,9 @@
 # endif
 # ifndef CONF_WITH_EXTENDED_MOUSE
 #  define CONF_WITH_EXTENDED_MOUSE 0
+# endif
+# ifndef CONF_WITH_VDI_16BIT
+#  define CONF_WITH_VDI_16BIT 0
 # endif
 # ifndef CONF_WITH_VDI_TEXT_SPEEDUP
 #  define CONF_WITH_VDI_TEXT_SPEEDUP 0
@@ -790,6 +805,9 @@
 # endif
 # ifndef CONF_WITH_3D_OBJECTS
 #  define CONF_WITH_3D_OBJECTS 0 /* Like ST, not Falcon */
+# endif
+# ifndef CONF_WITH_VDI_16BIT
+#  define CONF_WITH_VDI_16BIT 0 /* Like ST, not Falcon */
 # endif
 #endif
 
@@ -1697,6 +1715,14 @@
 #endif
 
 /*
+ * Set CONF_WITH_VDI_16BIT to 1 to include VDI support for the Falcon's
+ * 16-bit graphics modes.
+ */
+#ifndef CONF_WITH_VDI_16BIT
+# define CONF_WITH_VDI_16BIT 1
+#endif
+
+/*
  * Set CONF_WITH_VDI_TEXT_SPEEDUP to 1 to improve some VDI text output
  * performance
  */
@@ -2064,8 +2090,25 @@
 # define MIDI_DEBUG_PRINT 0
 #endif
 
+/*
+ * Set CARTRIDGE_DEBUG_PRINT to 1 to redirect debug prints to the
+ * cartridge port. A character 'c' is encoded into address lines
+ * A8-A1 by performing a read access to the upper half of the cartridge
+ * address space 0xFB0xxx, which is decoded to the /ROM3 signal.
+ * This has the advantage of being always available since it does not
+ * require initialization of a peripheral.
+ * Output can be decoded by connecting a logic analyzer to A8-A1,
+ * triggering on /ROM3, or by using a special firmware for the
+ * SidecarTridge Multi-device hardware:
+ * https://github.com/czietz/atari-debug-cart
+ */
+#ifndef CARTRIDGE_DEBUG_PRINT
+# define CARTRIDGE_DEBUG_PRINT 0
+#endif
+
+
 /* Determine if kprintf() is available */
-#if CONF_WITH_UAE || DETECT_NATIVE_FEATURES || STONX_NATIVE_PRINT || CONSOLE_DEBUG_PRINT || RS232_DEBUG_PRINT || SCC_DEBUG_PRINT || DUART_DEBUG_PRINT || COLDFIRE_DEBUG_PRINT || MIDI_DEBUG_PRINT
+#if CONF_WITH_UAE || DETECT_NATIVE_FEATURES || STONX_NATIVE_PRINT || CONSOLE_DEBUG_PRINT || RS232_DEBUG_PRINT || SCC_DEBUG_PRINT || DUART_DEBUG_PRINT || COLDFIRE_DEBUG_PRINT || MIDI_DEBUG_PRINT || CARTRIDGE_DEBUG_PRINT
 #  define HAS_KPRINTF 1
 # else
 #  define HAS_KPRINTF 0
@@ -2245,6 +2288,12 @@
 # endif
 #endif
 
+#if !CONF_WITH_VIDEL
+# if CONF_WITH_VDI_16BIT
+#  error CONF_WITH_VDI_16BIT requires CONF_WITH_VIDEL
+# endif
+#endif
+
 /*
  * Sanity checks for debugging options
  */
@@ -2267,7 +2316,7 @@
 # endif
 #endif
 
-#if (CONSOLE_DEBUG_PRINT + RS232_DEBUG_PRINT + SCC_DEBUG_PRINT + DUART_DEBUG_PRINT + COLDFIRE_DEBUG_PRINT + MIDI_DEBUG_PRINT) > 1
+#if (CONSOLE_DEBUG_PRINT + RS232_DEBUG_PRINT + SCC_DEBUG_PRINT + DUART_DEBUG_PRINT + COLDFIRE_DEBUG_PRINT + MIDI_DEBUG_PRINT + CARTRIDGE_DEBUG_PRINT) > 1
 # error Only one of CONSOLE_DEBUG_PRINT, RS232_DEBUG_PRINT, SCC_DEBUG_PRINT, COLDFIRE_DEBUG_PRINT or MIDI_DEBUG_PRINT must be set to 1.
 #endif
 

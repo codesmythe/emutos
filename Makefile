@@ -1,7 +1,7 @@
 #
 # Makefile - the EmuTOS overbloated Makefile
 #
-# Copyright (C) 2001-2022 The EmuTOS development team.
+# Copyright (C) 2001-2025 The EmuTOS development team.
 #
 # This file is distributed under the GPL, version 2 or at your
 # option any later version.  See doc/license.txt for details.
@@ -603,9 +603,8 @@ ROM_ARANYM = emutos-aranym.img
 .PHONY: aranym
 NODEP += aranym
 aranym: override DEF += -DMACHINE_ARANYM
-aranym: OPTFLAGS = $(SMALL_OPTFLAGS)
 aranym: CPUFLAGS = -m68040
-aranym: ROMSIZE = 512
+aranym: ROMSIZE = 1024
 aranym: ROM_PADDED = $(ROM_ARANYM)
 aranym:
 	@echo "# Building ARAnyM EmuTOS into $(ROM_PADDED)"

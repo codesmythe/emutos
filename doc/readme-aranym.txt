@@ -5,6 +5,14 @@ https://aranym.github.io/
 
 emutos-aranym.img - Multilanguage
 
+SPECIAL NOTE: In order to include new features, including support for the
+Falcon's Truecolor modes, the size of this ROM has increased to 1024 KB.
+At the time of writing, this size of ROM is supported by development
+versions of ARAnyM, but not by official releases.  If you are using ARAnyM
+release v1.10 (or earlier), you will not be able to use this ROM.  Instead
+you should use the standard (non-ARAnyM) 512 KB ROM for your language, which
+is available in a separate archive.
+
 The following optional files are also supplied:
 emuicon.rsc - contains additional icons for the desktop
 emuicon.def - definition file for the above
@@ -17,6 +25,7 @@ Other languages can be used by setting the NVRAM appropriately.
 
 Alternatively, you can add the -k xx option on the ARAnyM command line
 to force a specific language, where xx is:
+ca - Catalan
 cz - Czech
 de - German
 es - Spanish
@@ -28,6 +37,7 @@ it - Italian
 nl - Dutch
 no - Norwegian
 pl - Polish
+ro - Romanian
 ru - Russian
 se - Swedish
 cd - Swiss German

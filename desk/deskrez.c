@@ -4,7 +4,7 @@
  * This file was created to support desktop resolution changes
  * for the TT and Falcon.
  *
- * Copyright (C) 2012-2022 The EmuTOS development team
+ * Copyright (C) 2012-2025 The EmuTOS development team
  *
  * Authors:
  *  RFB    Roger Burrows
@@ -178,9 +178,14 @@ WORD mode, monitor;
             obj->ob_spec = (LONG) desktop_str_addr(STREZ1+i);
     }
 
-    /* FIXME: change the next 2 lines when we have TrueColor support in VDI */
+    /*
+     * if we're not compiling with 16-bit support in the VDI,
+     * hide the Truecolor header text
+     */
+#if !CONF_WITH_VDI_16BIT
     obj = tree + FREZTEXT;          /* this hides the "TC" header text */
     obj->ob_flags |= HIDETREE;
+#endif
 
     for (i = 0, obj = tree+FREZLIST; i < NUM_FALCON_BUTTONS; i++, obj++) {
         mode = falconmode_from_button[i];
@@ -188,8 +193,10 @@ WORD mode, monitor;
             /* hide unsupported TC modes for VGA monitors */
             if ((monitor == MON_VGA) && (mode&VIDEL_80COL))
                 obj->ob_flags |= HIDETREE;
-            /* FIXME: change the next line when we have TrueColor support in VDI */
+            /* hide all TC modes if we're not compiling with 16-bit VDI */
+#if !CONF_WITH_VDI_16BIT
             obj->ob_flags |= HIDETREE;
+#endif
         }
         if (i == selected)
             obj->ob_state |= SELECTED;
@@ -263,6 +270,14 @@ WORD oldmode;
     tree = desk_rs_trees[ADAMIREZ];
 
     for (i = 0, obj = tree+AMIREZ0; i < NUM_AMIGA_BUTTONS; i++, obj++) {
+        WORD mode = amigamode_from_button[i];
+        if (mode == -1) /* separator */
+            continue;
+
+        /* disable PAL modes on NTSC */
+        if (amiga_is_ntsc && (mode & VIDEL_PAL))
+            obj->ob_state |= DISABLED;
+
         if (i == selected)
             obj->ob_state |= SELECTED;
         else obj->ob_state &= ~SELECTED;

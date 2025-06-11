@@ -4,7 +4,7 @@
 
 /*
 *       Copyright 1999, Caldera Thin Clients, Inc.
-*                 2002-2022 The EmuTOS development team
+*                 2002-2025 The EmuTOS development team
 *
 *       This software is licenced under the GNU Public License.
 *       Please see LICENSE.TXT for further information.
@@ -54,6 +54,7 @@
 #include "scancode.h"
 #include "biosext.h"
 #include "lineavars.h"      /* for MOUSE_BT, V_REZ_HZ */
+#include "asm.h"
 
 /* Needed to force media change */
 #define MEDIACHANGE     0x02
@@ -73,6 +74,10 @@
 static const WORD std_skewtab[] =
  { 1, 2, 3, 4, 5, 6, 7, 8, 9,
    1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+static const WORD k800_skewtab[] =
+ { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+   1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
 static const WORD hd_skewtab[] =
  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
@@ -511,6 +516,9 @@ static WORD get_key(void)
             return 'Q';
         if (MOUSE_BT & 0x0001)  /* left mouse button means next page */
             return ' ';
+#if USE_STOP_INSN_TO_FREE_HOST_CPU
+        Supexec((LONG)stop_until_interrupt);
+#endif
     }
 
     c = bios_conin();
@@ -1440,18 +1448,24 @@ static WORD format_floppy(OBJECT *tree, WORD max_width, WORD incr)
     skewtab = std_skewtab;
     trackskew = 2;
 
-    switch(inf_gindex(tree, FMT_SS, 3))
+    switch(inf_gindex(tree, FMT_SS, 4))
     {
     case 0:             /* single sided */
         numsides = 1;
         disktype = 2;
         trackskew = 3;  /* skew between tracks */
         break;
-    case 2:             /* high density */
+    case 2:             /* 800K */
+        disktype = 6;
+        spt = 10;
+        skewtab = k800_skewtab;
+        break;
+    case 3:             /* high density */
         disktype = 4;
         spt = 18;
         skewtab = hd_skewtab;
         trackskew = 3;
+        break;
     }
 
     buf = dos_alloc_stram(FMTBUFLEN);
@@ -1505,6 +1519,43 @@ static WORD format_floppy(OBJECT *tree, WORD max_width, WORD incr)
 }
 
 /*
+ *  Determine the default drive for the floppy format dialog
+ *
+ *  (1) if there is a selected drive icon, and the drive exists,
+ *      return that drive
+ *  (2) else, if a drive exists return that drive (preferring A:)
+ *  (3) otherwise return -1 (no floppy drives)
+ */
+static WORD determine_default_drive(OBJECT *tree)
+{
+    OBJECT *obj;
+    WORD i, objnum;
+
+    for (i = 0; i < 2; i++)
+    {
+        objnum = obj_get_obid('A'+i);
+        if (!objnum)        /* no such icon */
+            continue;
+
+        if (G.g_screen[objnum].ob_state & SELECTED)
+        {
+            obj = &tree[FMT_DRVA+i];
+            if (!(obj->ob_state & DISABLED))
+                return i;
+        }
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        obj = &tree[FMT_DRVA+i];
+        if (!(obj->ob_state & DISABLED))
+            return i;
+    }
+
+    return -1;
+}
+
+/*
  *  Format a floppy disk
  */
 void do_format(void)
@@ -1530,46 +1581,29 @@ void do_format(void)
         }
         else
         {
-            obj->ob_state &= ~SELECTED;
             obj->ob_state |= DISABLED;
         }
+        obj->ob_state &= ~SELECTED;     /* always deselect buttons */
     }
 
     /*
-     * if a drive is currently selected, don't change it
+     * determine default drive to select in dialog
      */
-    drive = -1;
-    for (i = 0, obj = &tree[FMT_DRVA]; i < 2; i++, obj++)
+    drive = determine_default_drive(tree);
+
+    /*
+     * if we've found a drive, select the corresponding button
+     * otherwise there are no enabled drives, so disallow OK
+     */
+    if (drive >= 0)
     {
-        if (obj->ob_state & SELECTED)
-        {
-            drive = i;
-            break;
-        }
+        obj = &tree[FMT_DRVA+drive];
+        obj->ob_state |= SELECTED;
     }
-
-    /*
-     * if NO drive was previously selected, select the first enabled one
-     */
-    if (drive < 0)
+    else
     {
-        for (i = 0, obj = &tree[FMT_DRVA]; i < 2; i++, obj++)
-        {
-            if (!(obj->ob_state & DISABLED))
-            {
-                drive = i;
-                break;
-            }
-        }
-        if (drive >= 0)
-            obj->ob_state |= SELECTED;
-    }
-
-    /*
-     * if there are no enabled drives, disallow OK
-     */
-    if (drive < 0)
         tree[FMT_OK].ob_state |= DISABLED;
+    }
 
     tree[FMT_CNCL].ob_state &= ~SELECTED;
 
@@ -1623,6 +1657,8 @@ void do_format(void)
         tree[FMT_BAR].ob_spec = 0x00FF1101L;
         tree[FMT_OK].ob_state &= ~SELECTED;
     } while (!done);
+
+    desk_clear(DESKWH);
 }
 #endif
 

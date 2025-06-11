@@ -1,7 +1,7 @@
 /*
  * spi_cf.c - SPI interface for SD/MMC card driver
  *
- * Copyright (C) 2013-2019 The EmuTOS development team
+ * Copyright (C) 2013-2024 The EmuTOS development team
  *
  * Authors:
  *  RFB   Roger Burrows
@@ -119,7 +119,7 @@ void spi_initialise(void)
     MCF_DSPI_DCTAR1 = MMC_MODE;
     MCF_DSPI_DCTAR2 = IDENT_MODE;
 
-    /* Initialze the PAR_DPSI register to use correct pin functions.*/
+    /* Initialize the PAR_DPSI register to use correct pin functions.*/
     MCF_PAD_PAR_DSPI |= (
         MCF_PAD_PAR_DSPI_PAR_CS5 |
         MCF_PAD_PAR_DSPI_PAR_CS3_DSPICS3 |

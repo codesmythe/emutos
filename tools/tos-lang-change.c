@@ -5,7 +5,7 @@
  *      gcc -o tos-lang-change -O -Wall tos-lang-change.c
  *
  * Copyright 2005-2016 Eero Tamminen
- * Copyright 2022      Christian Zietz
+ * Copyright 2022-2025 The EmuTOS development team
  *
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
@@ -52,7 +52,9 @@ static country_t countries[] = {
         { 16, "Hungary" },
         { 17, "Poland" },
         { 19, "Russia" },
+        { 24, "Romania" },
         { 31, "Greece" },
+        { 54, "Catalan" },
         {127, "Multilanguage (all countries are supported, TOS >= v4.0)" },
         {COUNTRY_ERROR, NULL }
 };

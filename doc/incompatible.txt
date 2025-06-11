@@ -212,7 +212,7 @@ Bug analysis:
 During startup, the program switches to supervisor state via the Super()
 system call.  Subsequently, the supervisor stack overwrites the program's
 user stack.  On exit, the user stack pointer is restored and during this
-a corrupted value is loaded into the SR, causing a trace excpetion.
+a corrupted value is loaded into the SR, causing a trace exception.
 
 
 Program: CP/M-Z80 Emulator by SoftDesign
@@ -497,6 +497,14 @@ Program gets the address of the IKBD handler, then inserts jumps to
 various fixed offsets within that handler into its own code.  The fact
 that it does not crash is pure chance; when run under TOS 2.06, it does
 crash.
+
+
+Program: Tango 1.0x
+-------------------
+Error: panic
+
+Bug analysis:
+See entry on Cubase. (Tango also uses Steinberg's M-ROS.)
 
 
 Program: Turbo ST 1.8 (and possibly other versions)

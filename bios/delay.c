@@ -4,7 +4,7 @@
  * note that the timings are quite imprecise (but conservative) unless
  * you are running on at least a 32MHz 68030 processor
  *
- * Copyright (C) 2013-2022 The EmuTOS development team
+ * Copyright (C) 2013-2024 The EmuTOS development team
  *
  * Authors:
  *  RFB    Roger Burrows
@@ -12,6 +12,9 @@
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
  */
+
+/* #define ENABLE_KDEBUG */
+
 #include "emutos.h"
 #include "biosdefs.h"
 #include "mfp.h"
@@ -51,9 +54,9 @@ void calibration_timer(void);
  */
 void init_delay(void)
 {
-#if defined(MACHINE_FIREBEE) || defined(MACHINE_M548X)
+#ifdef __mcoldfire__
     /*
-      For coldfire, we don't know cookie_mcf.sysbus_frequency at this point.
+      For ColdFire, we don't know cookie_mcf.sysbus_frequency at this point.
       We know it will be between 100 and 133 MHz. Since also at this point
       it is okay for the loop time to be approximate, we just use 133 MHz
       here and set the correct value later in calibrate_delay() below.
@@ -80,6 +83,8 @@ void init_delay(void)
         }
     }
 #endif
+
+    KDEBUG(("init_delay loopcount_1_msec=%ld\n", loopcount_1_msec));
 }
 
 /*
@@ -122,9 +127,11 @@ void calibrate_delay(void)
      */
     if (intcount)       /* check for valid */
         loopcount_1_msec = (loopcount * 24) / (intcount * 25);
+#elif defined(__mcoldfire__)
+    loopcount_1_msec = (ULONG)cookie_mcf.sysbus_frequency * 1000;
 #else
-  #if defined(MACHINE_FIREBEE) || defined(MACHINE_M548X)
-    loopcount_1_msec = cookie_mcf.sysbus_frequency * 1000;
-  #endif
+    KDEBUG(("Warning: loopcount_1_msec isn't calibrated.\n"));
 #endif
+
+    KDEBUG(("calibrate_delay loopcount_1_msec=%ld\n", loopcount_1_msec));
 }

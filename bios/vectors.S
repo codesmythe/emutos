@@ -1,7 +1,7 @@
 /*
  * vectors.S - exception vectors
  *
- * Copyright (C) 2001-2022 The EmuTOS development team
+ * Copyright (C) 2001-2025 The EmuTOS development team
  *
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
@@ -106,7 +106,6 @@
 
 /* basically initialize the 62 exception vectors. */
 _init_exc_vec:
-        clr.l   _proc_lives.w
         lea     deflt_vec_table, a0
         lea     8, a1
         move.l  #61, d0
@@ -123,11 +122,18 @@ set_vec:
 buggy_jit_save_registers_before_bus_error:
         rts
 
-/* initialize the 192 user vectors. */
+/* Initialize the user vectors.
+ * On a cold boot, all 192 user vectors are initialized.
+ * On a warm boot, only the first 64 vectors are reinitialized.
+ * This avoids overwriting crash dumps starting at address 0x380.
+ */
 _init_user_vec:
         lea     user_vec, a0
         lea     256, a1
-        move.l  #191, d0
+        moveq   #63, d0
+        tst.w   4(sp)           // check FIRST_BOOT
+        jeq     set_uvec
+        move.w  #191, d0
 set_uvec:
         move.l  a0, (a1)+
 #ifdef __mcoldfire__
@@ -951,10 +957,11 @@ pi_not30:
         cmpi.b  #60,_mcpu+3
         jne     pi_next
 
-        // on 68040 and 68060, invalidate the line holding the opcode only
+        // on 68040 and 68060, push the whole dcache and invalidate the entire icache
+        // as we have no guarantee that physical = virtual
 pi_inval:
         nop
-        CINVL_IC_A0                     // cinvl   ic,(a0)
+        CPUSHA_BC
         nop
 
 pi_next:

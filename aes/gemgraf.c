@@ -4,7 +4,7 @@
 
 /*
 *       Copyright 1999, Caldera Thin Clients, Inc.
-*                 2002-2022 The EmuTOS development team
+*                 2002-2025 The EmuTOS development team
 *
 *       This software is licenced under the GNU Public License.
 *       Please see LICENSE.TXT for further information.
@@ -642,6 +642,7 @@ static void gr_gblt(WORD *pimage, GRECT *pi, WORD col1, WORD col2)
 static void gr_colourblit(WORD *pdata, GRECT *pi, WORD num_planes)
 {
     WORD pxyarray[8];
+    WORD mode;
 
     gsx_fix(&gl_src, pdata, pi->g_w/8, pi->g_h);
     gl_src.fd_nplanes = num_planes;
@@ -658,9 +659,16 @@ static void gr_colourblit(WORD *pdata, GRECT *pi, WORD num_planes)
     pxyarray[5] = pi->g_y;
     pxyarray[6] = pi->g_x + pi->g_w - 1;
     pxyarray[7] = pi->g_y + pi->g_h - 1;
-    gsx_mon();
 
-    vro_cpyfm(S_OR_D, pxyarray, &gl_src, &gl_dst);
+    mode = S_OR_D;
+
+#if CONF_WITH_VDI_16BIT
+    if (num_planes > 8)     /* Truecolor mode */
+        mode = S_AND_D;
+#endif
+
+    vro_cpyfm(mode, pxyarray, &gl_src, &gl_dst);
+    gsx_mon();
 }
 
 

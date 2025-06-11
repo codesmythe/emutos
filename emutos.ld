@@ -1,7 +1,7 @@
 /*
  * emutos.ld - Custom linker script for EmuTOS ROM
  *
- * Copyright (C) 2016-2022 The EmuTOS development team
+ * Copyright (C) 2016-2024 The EmuTOS development team
  *
  * Authors:
  *  VRI   Vincent Rivière
@@ -133,8 +133,11 @@ SECTIONS
     {
         CREATE_OBJECT_SYMBOLS
         __text = .;
-        *(.text)
-        *(.rodata .rodata.*) /* Only present in ELF objects */
+        *(.text .rodata .rodata.*)
+        /* Note: .rodata sections are only present in ELF objects.
+         * We mix .text and .rodata to keep critical parts (such as BIOS
+         * and fonts) at the beginning of the ROM.
+         */
         __etext = .;
     } >REGION_READ_ONLY =0x4afc
 
@@ -163,9 +166,10 @@ SECTIONS
 
     /* This section is always the last one stored in ST-RAM.
      * It is usually empty, just used to calculate the last address
-     * of ST-RAM statically used by EmuTOS.
+     * of ST-RAM statically used by EmuTOS. If needed, the address
+     * is rounded up to the next multiple of four.
      */
-    .laststram :
+    .laststram : ALIGN(4)
     {
         __end_os_stram = .;
     } >stram

@@ -3,7 +3,7 @@
  *
  * Copyright 1982 by Digital Research Inc.  All rights reserved.
  * Copyright 1999 by Caldera, Inc. and Authors:
- * Copyright 2002-2023 The EmuTOS development team
+ * Copyright 2002-2025 The EmuTOS development team
  *
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
@@ -235,8 +235,16 @@ static BOOL ok_for_direct_blit(Vwk *vwk, WORD width, JUSTINFO *justified)
     if (justified)
         return FALSE;
 
-    if (DESTX & 0x0007)
-        return FALSE;
+#if CONF_WITH_VDI_16BIT
+    if (TRUECOLOR_MODE)     /* always byte-aligned */
+    {
+    }
+    else
+#endif
+    {
+        if (DESTX & 0x0007)
+            return FALSE;
+    }
 
     fnt_ptr = vwk->cur_font;
 

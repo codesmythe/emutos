@@ -2,7 +2,7 @@
  * vdi_raster.c - Blitting routines
  *
  * Copyright 2002 Joachim Hoenig (blitter)
- * Copyright 2003-2020 The EmuTOS development team
+ * Copyright 2003-2025 The EmuTOS development team
  *
  * This file is distributed under the GPL, version 2 or at your
  * option any later version.  See doc/license.txt for details.
@@ -11,6 +11,7 @@
 /* #define ENABLE_KDEBUG */
 
 #include "emutos.h"
+#include "asm.h"
 #include "vdi_defs.h"
 #include "vdistub.h"
 #include "blitter.h"
@@ -18,6 +19,8 @@
 #include "lineavars.h"
 #include "tosvars.h"
 #include "has.h"        /* for blitter-related items */
+#include "string.h"     /* for bzero() */
+#include "gemdos.h"     /* for mem alloc & free */
 
 #ifdef __mcoldfire__
 #define ASM_BLIT_IS_AVAILABLE   0   /* assembler routine does not support ColdFire */
@@ -180,6 +183,78 @@ void fast_bit_blt(struct blit_frame *blit_info);    /* defined in vdi_blit.S */
 /* holds VDI internal info for bit_blt(), fast_bit_blt() */
 static struct blit_frame vdi_info;
 
+#if CONF_WITH_VDI_16BIT
+/*
+ * convert between 16-bit standard format and Truecolor device-dependent format
+ */
+static void vr_trnfm16(MFDB *src_mfdb, MFDB *dst_mfdb)
+{
+    WORD *src, *dst, *work, *tempbuf = NULL;
+    LONG i, planesize, formsize;
+    UWORD src_mask, dst_mask;
+
+    src = src_mfdb->fd_addr;
+    dst = dst_mfdb->fd_addr;
+    planesize = (LONG)src_mfdb->fd_h * src_mfdb->fd_wdwidth;    /* in words */
+    formsize = planesize * sizeof(WORD) * 16;   /* in bytes */
+
+    /*
+     * for now, if 'in place' we actually do a normal transform to a temp buf.
+     * the only problem with this is that we fail silently if memory is tight.
+     */
+    if (src == dst)
+    {
+        tempbuf = dos_alloc_anyram(formsize);
+        if (!tempbuf)
+        {
+            KDEBUG(("Cannot allocate temp buf for vr_trnfm()\n"));
+            return;
+        }
+        dst = tempbuf;
+    }
+
+    bzero(dst, formsize);   /* clear out the output */
+
+    if (src_mfdb->fd_stand) /* handle standard -> device-dependent */
+    {
+        for (dst_mask = 0x8000, work = dst; dst_mask; dst_mask >>= 1, work = dst)
+        {
+            for (i = 0; i < planesize; i++, src++)
+            {
+                for (src_mask = 0x8000; src_mask; src_mask >>= 1, work++)
+                {
+                    if (*src & src_mask)
+                    {
+                        *work |= dst_mask;
+                    }
+                }
+            }
+        }
+    }
+    else                    /* handle device-dependent -> standard */
+    {
+        for (src_mask = 0x8000, work = src; src_mask; src_mask >>= 1, work = src)
+        {
+            for (i = 0; i < planesize; i++, dst++)
+            {
+                for (dst_mask = 0x8000; dst_mask; dst_mask >>= 1, work++)
+                {
+                    if (*work & src_mask)
+                    {
+                        *dst |= dst_mask;
+                    }
+                }
+            }
+        }
+    }
+
+    if (tempbuf)
+    {
+        memcpy(dst_mfdb->fd_addr, tempbuf, formsize);
+        dos_free(tempbuf);
+    }
+}
+#endif
 
 /*
  * vdi_vr_trnfm - transform screen bitmaps
@@ -188,7 +263,8 @@ static struct blit_frame vdi_info;
  *
  * The major difference between the two formats is that, in the device-
  * independent ("standard") form, the planes are consecutive, while on
- * the Atari screen they are interleaved.
+ * the Atari screen they are interleaved (for 1-8 planes) or pixel-packed
+ * (Falcon Truecolor mode).
  */
 void vdi_vr_trnfm(Vwk * vwk)
 {
@@ -201,6 +277,22 @@ void vdi_vr_trnfm(Vwk * vwk)
     /* Get the pointers to the MFDBs */
     src_mfdb = *(MFDB **)&CONTRL[7];
     dst_mfdb = *(MFDB **)&CONTRL[9];
+
+#if CONF_WITH_VDI_16BIT
+    /*
+     * handle an undocumented feature of TOS4 VDI: you must be in a
+     * Truecolor mode to get Truecolor device-dependent output from a
+     * 16-bit standard form.
+     *
+     * if the current mode is NOT Truecolor, TOS4 will transform a
+     * 16-bit standard form to a 16-bitplane device-dependent form (!).
+     */
+    if (TRUECOLOR_MODE && (src_mfdb->fd_nplanes > 8))
+    {
+        vr_trnfm16(src_mfdb, dst_mfdb);
+        return;
+    }
+#endif
 
     src = src_mfdb->fd_addr;
     dst = dst_mfdb->fd_addr;
@@ -809,6 +901,9 @@ dont_clip (struct blit_frame * info)
 
 /*
  * setup_info - fill the info structure with MFDB values
+ *
+ * returns TRUE iff there is nothing to do (everything is clipped away,
+ *              or the destination plane plane count is invalid)
  */
 static BOOL
 setup_info (struct raster_t *raster, struct blit_frame * info)
@@ -864,9 +959,372 @@ setup_info (struct raster_t *raster, struct blit_frame * info)
     info->s_nxpl = 2;           /* next plane offset (source) */
     info->d_nxpl = 2;           /* next plane offset (destination) */
 
-    /* only 8, 4, 2 and 1 planes are valid (destination) */
-    return info->plane_ct & ~0x000f;
+#if CONF_WITH_VDI_16BIT
+    return (info->plane_ct <= 16) ? FALSE : TRUE;
+#else
+    return (info->plane_ct <= 8) ? FALSE : TRUE;
+#endif
 }
+
+#if CONF_WITH_VDI_16BIT
+/*
+ * vro_cpyfm16() - handle vro_cpyfm() for 16-bit graphics
+ *
+ * the logic ops all act literally on the pixels (words) concerned
+ */
+static void vro_cpyfm16(struct blit_frame *info)
+{
+    UWORD *src, *dst, *p, *q;
+    WORD src_width, dst_width, next_pixel;
+    WORD mode, rows, cols;
+
+    mode = INTIN[0];
+
+    /*
+     * init pointers & increments
+     */
+    src_width = info->s_nxln / sizeof(WORD);
+    dst_width = info->d_nxln / sizeof(WORD);
+    next_pixel = 1;
+    src = info->s_form + ((LONG)info->s_ymin * src_width) + info->s_xmin;
+    dst = info->d_form + ((LONG)info->d_ymin * dst_width) + info->d_xmin;
+
+    /*
+     * adjust if potential overlap
+     */
+    if (src < dst) {
+        src = info->s_form + ((LONG)info->s_ymax * src_width) + info->s_xmax;
+        dst = info->d_form + ((LONG)info->d_ymax * dst_width) + info->d_xmax;
+        src_width = -src_width;
+        dst_width = -dst_width;
+        next_pixel = -1;
+    }
+
+    p = src;
+    q = dst;
+
+    rows = info->s_ymax - info->s_ymin + 1;
+
+    switch(mode) {
+    case BM_ALL_WHITE:  /* D1 = 0 */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = 0;
+                q += next_pixel;
+            }
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_S_AND_D:    /* D1 = S AND D */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = *p & *q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_S_AND_NOTD: /* D1 = S AND (NOT D) */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = *p & ~*q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_S_ONLY:     /* D1 = S */                /* replace */
+        /*
+         * this is the common case, so we optimize a bit
+         */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            if (src < dst) {
+                while(cols-- > 0) {
+                    *q-- = *p--;
+                }
+            } else {
+                while(cols-- > 0) {
+                    *q++ = *p++;
+                }
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOTS_AND_D: /* D1 = (NOT S) AND D */    /* erase */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~*p & *q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_D_ONLY:     /* D1 = D */
+        /* nothing to do */
+        break;
+    case BM_S_XOR_D:    /* D1 = S XOR D */          /* XOR */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = *p ^ *q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_S_OR_D:     /* D1 = S OR D */           /* transparent */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = *p | *q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOT_SORD:   /* D1 = NOT (S OR D) */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~(*p | *q);
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOT_SXORD:  /* D1 = NOT (S XOR D) */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~(*p ^ *q);
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOT_D:      /* D1 = NOT D */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~*q;
+                q += next_pixel;
+            }
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_S_OR_NOTD:  /* D1 = S OR (NOT D) */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = *p | ~*q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOT_S:      /* D1 = NOT S */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~*p;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOTS_OR_D:  /* D1 = (NOT S) OR D */     /* reverse transparent */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~*p | *q;
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_NOT_SANDD:  /* D1 = NOT (S AND D) */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = ~(*p & *q);
+                p += next_pixel;
+                q += next_pixel;
+            }
+            src += src_width;
+            p = src;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    case BM_ALL_BLACK:  /* D1 = 1 */
+        while(rows-- > 0) {
+            cols = info->s_xmax - info->s_xmin + 1;
+            while(cols-- > 0) {
+                *q = 0xffff;
+                q += next_pixel;
+            }
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+    }
+}
+
+/*
+ * vrt_cpyfm16() - handle vrt_cpyfm() for 16-bit graphics
+ */
+static void vrt_cpyfm16(struct blit_frame *info)
+{
+    UWORD *src, *dst, *p, *q;
+    WORD mode, src_width, src_off, dst_width, x, y;
+    UWORD *palette, src_mask, bit_mask, fgcol, bgcol;
+
+    mode = INTIN[0];
+
+    palette = CUR_WORK->ext->palette;
+    fgcol = palette[info->fg_col];
+    bgcol = palette[info->bg_col];
+
+    /*
+     * init source area variables
+     */
+    src_width = info->s_nxln / sizeof(WORD);/* width in words */
+    src_off = info->s_xmin >> 4;            /* starting x offset in words */
+    bit_mask = src_mask = 0x8000U >> (info->s_xmin&0x000f); /* starting bit mask */
+    p = src = info->s_form + ((LONG)info->s_ymin * src_width) + src_off;
+
+    /*
+     * init destination area variables
+     */
+    dst_width = info->d_nxln / sizeof(WORD);    /* in words */
+    q = dst = info->d_form + ((LONG)info->d_ymin * dst_width) + info->d_xmin;
+
+    switch(mode) {
+    case MD_ERASE:
+        for (y = info->s_ymin; y <= info->s_ymax; y++) {
+            for (x = info->s_xmin; x <= info->s_xmax; x++, q++) {
+                if (!(*p & bit_mask))
+                    *q = bgcol;
+                rorw1(bit_mask);
+                if (bit_mask & 0x8000)
+                    p++;
+            }
+            src += src_width;
+            p = src;
+            bit_mask = src_mask;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+
+    case MD_XOR:
+        for (y = info->s_ymin; y <= info->s_ymax; y++) {
+            for (x = info->s_xmin; x <= info->s_xmax; x++, q++) {
+                if (*p & bit_mask)
+                    *q = ~*q;
+                rorw1(bit_mask);
+                if (bit_mask & 0x8000)
+                    p++;
+            }
+            src += src_width;
+            p = src;
+            bit_mask = src_mask;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+
+    case MD_TRANS:
+        for (y = info->s_ymin; y <= info->s_ymax; y++) {
+            for (x = info->s_xmin; x <= info->s_xmax; x++, q++) {
+                if (*p & bit_mask)
+                    *q = fgcol;
+                rorw1(bit_mask);
+                if (bit_mask & 0x8000)
+                    p++;
+            }
+            src += src_width;
+            p = src;
+            bit_mask = src_mask;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+
+    case MD_REPLACE:
+        for (y = info->s_ymin; y <= info->s_ymax; y++) {
+            for (x = info->s_xmin; x <= info->s_xmax; x++, q++) {
+                if (*p & bit_mask)
+                    *q = fgcol;
+                else
+                    *q = bgcol;
+                rorw1(bit_mask);
+                if (bit_mask & 0x8000)
+                    p++;
+            }
+            src += src_width;
+            p = src;
+            bit_mask = src_mask;
+            dst += dst_width;
+            q = dst;
+        }
+        break;
+
+    default:
+        return;                     /* unsupported mode */
+    }
+}
+#endif
 
 /* common functionality for vdi_vro_cpyfm, vdi_vrt_cpyfm, linea_raster */
 static void
@@ -905,6 +1363,14 @@ cpy_raster(struct raster_t *raster, struct blit_frame *info)
         info->op_tab[0] = mode; /* fg:0 bg:0 */
         info->bg_col = 0;       /* bg:0 & fg:0 => only first OP_TAB */
         info->fg_col = 0;       /* entry will be referenced */
+
+#if CONF_WITH_VDI_16BIT
+        if (info->plane_ct > 8)
+        {
+            vro_cpyfm16(info);          /* 16-bit version */
+            return;
+        }
+#endif
 
     } else {
 
@@ -962,6 +1428,15 @@ cpy_raster(struct raster_t *raster, struct blit_frame *info)
         default:
             return;                     /* unsupported mode */
         }
+
+#if CONF_WITH_VDI_16BIT
+        if (info->plane_ct > 8)
+        {
+            vrt_cpyfm16(info);          /* 16-bit version */
+            return;
+        }
+#endif
+
     }
 
     /*
