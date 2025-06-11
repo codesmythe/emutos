@@ -356,7 +356,7 @@ configure_target(rosco_v2     MACHINE_ROSCO_V2         256 "-Os" US WITH_AES ON 
 configure_target(bitsy_v1     MACHINE_BITSY_V1         512 "-O2" US WITH_AES ON  WITH_CLI ON)
 configure_target(bitsy_v1_uk  MACHINE_BITSY_V1         512 "-O2" UK WITH_AES ON  WITH_CLI ON)
 configure_target(roberts7531  MACHINE_ROBERTS7531      256 "-Os" US WITH_AES ON  WITH_CLI ON)
-configure_target(mega-68000   MACHINE_MEGA_68000       256 "-Os" US WITH_AES OFF WITH_CLI ON)
+configure_target(mega-68000   MACHINE_MEGA_68000       256 "-Os" UK WITH_AES OFF WITH_CLI ON)
 
 
 
