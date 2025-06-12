@@ -39,6 +39,8 @@
 
 #if CONF_WITH_IDE
 
+#define CONF_WITH_IDE_CHS 0
+
 #ifdef MACHINE_M548X
 
 #include "coldpriv.h"
@@ -436,7 +438,9 @@ static WORD clear_multiple_mode(UWORD ifnum,UWORD dev);
 static void ide_detect_devices(UWORD ifnum);
 static LONG ata_identify(WORD dev);
 static int ide_select_device(volatile struct IDE *interface,UWORD dev);
+#if CONF_WITH_IDE_CHS
 static void set_chs_mode(WORD dev,struct IDENTIFY *identify);
+#endif
 static void set_multiple_mode(WORD dev,UWORD multi_io);
 static void set_lba48_mode(WORD dev, UWORD lba48);
 static UWORD get_start_count(volatile struct IDE *interface);
@@ -724,7 +728,9 @@ void ide_init(void)
     /* set multiple mode for all devices that we have info for */
     for (i = 0; i < DEVICES_PER_BUS; i++)
         if (ata_identify(i) == 0) {
+#if CONF_WITH_IDE_CHS
             set_chs_mode(i,&identify);
+#endif
             set_multiple_mode(i,identify.multiple_io_info);
             set_lba48_mode(i,identify.cmds_supported[1]);
         }
@@ -1528,6 +1534,7 @@ LONG ide_rw(WORD rw,ULONG sector,UWORD count,UBYTE *buf,WORD dev,BOOL need_bytes
     return E_OK;
 }
 
+#if CONF_WITH_IDE_CHS
 static void set_chs_mode(WORD dev,struct IDENTIFY *identify)
 {
     UWORD ifnum, ifdev;
@@ -1561,6 +1568,7 @@ static void set_chs_mode(WORD dev,struct IDENTIFY *identify)
      */
     ide_nodata(IDE_CMD_INIT_DEV_PARAMS,ifnum,ifdev,(info->heads-1)*info->sectors,info->sectors);
 }
+#endif
 
 static void set_lba48_mode(WORD dev, UWORD lba48)
 {
