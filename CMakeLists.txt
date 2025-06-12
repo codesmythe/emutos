@@ -5,7 +5,7 @@ include("cmake/preproc.cmake")
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "./cmake/overrides.cmake")
 
-project(emutos LANGUAGES C ASM VERSION 1.2.1)
+project(emutos LANGUAGES C ASM VERSION 1.4.0)
 
 enable_language(ASM)
 
