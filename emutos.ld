@@ -38,6 +38,8 @@ OUTPUT_FORMAT(binary)
 # define ROM_ORIGIN 0xb0000 
 #elif defined(MACHINE_MEGA_68000)
 # define ROM_ORIGIN 0x00F80000
+#elif defined(MACHINE_DDRAIG68K)
+# define ROM_ORIGIN 0x00F80000
 #elif defined(MACHINE_ROBERTS7531)
 # define ROM_ORIGIN 0x700000
 #else

@@ -120,7 +120,7 @@ struct IDE
 #define IDE_WRITE_COMMAND_HEAD(i,a,b) \
     { i->head = b; i->command = a; }
 
-#if defined(MACHINE_TINY68K) || defined(MACHINE_ROBERTS7531) || defined(MACHINE_MEGA_68000)
+#if defined(MACHINE_TINY68K) || defined(MACHINE_ROBERTS7531) || defined(MACHINE_MEGA_68000) || defined(MACHINE_DDRAIG68K)
 # define IDE_WRITE_CONTROL(i,a)
 # define IDE_READ_ALT_STATUS(i)    i->command
 #else
@@ -185,7 +185,7 @@ struct IDE
 #define NUM_IDE_INTERFACES  1   /* (e.g. stacked ST Doubler) */
 #endif
 
-#if defined(MACHINE_TINY68K) || defined(MACHINE_ROBERTS7531) || defined(MACHINE_MEGA_68000)
+#if defined(MACHINE_TINY68K) || defined(MACHINE_ROBERTS7531) || defined(MACHINE_MEGA_68000) || defined(MACHINE_DDRAIG68K)
 
 struct IDE
 {
@@ -218,6 +218,8 @@ struct IDE
   #define ide_interface           ((volatile struct IDE *)0x00ffe000)
 #elif defined(MACHINE_MEGA_68000)
   #define ide_interface           ((volatile struct IDE *)0x00AE0000)
+#elif defined(MACHINE_DDRAIG68K)
+  #define ide_interface           ((volatile struct IDE *)0xFFF7F300)
 #else
   #define ide_interface           ((volatile struct IDE *)0x00a00000)
 #endif
@@ -557,7 +559,7 @@ static int ide_interface_exists(WORD ifnum, LONG timeout)
     volatile struct IDE *twisted_iface = (volatile struct IDE *)(((ULONG)ifinfo[ifnum].base_address)-1);
     enum ide_if_status regular_iface_status = IDE_IF_NOTCHECKED;
     enum ide_if_status twisted_iface_status = IDE_IF_NOTPRESENT;
-#ifndef MACHINE_MEGA_68000
+#if !defined(MACHINE_MEGA_68000) && !defined(MACHINE_DDRAIG68K)
     BOOL allow_twisted = check_read_byte((long)&twisted_iface->control);
 #else
     BOOL allow_twisted = FALSE;
