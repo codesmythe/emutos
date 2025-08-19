@@ -4,11 +4,13 @@ This branch contains the code for ports of headless EmuTOS to a few
 68000 based single board computers (SBCs). The supported boards
 include
 
+- My own [BITSY Mark I](https://github.com/codesmythe/BITSY_MK_I)
+
+- Steve Crompton's [Mega 68K series of boards](https://www.mega-micros.co.uk/index_68030.htm)
+
 - Bill Shen's [Tiny68K Rev 2](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:tiny68k:tiny68k_rev2)
 
-- The [Rosco M68K Classic V2](https://rosco-m68k.com) board.
-
-- Steve Crompton's [Mega 68K series of boards](https://www.mega-micros.co.uk/index_68030.htm).
+- The [Rosco M68K Classic V2](https://rosco-m68k.com) board
 
 The features added in this branch relative to upstream EmuTOS include:
 
@@ -60,10 +62,10 @@ mkdir build && cd build
 # Run cmake to configure
 cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake ..
 
-# Build the Tiny68K variant
-# Other valid targets at the moment are `rosco_v2.bin`,
-#   `roberts7531.bin` and `mega-68000.bin`.
-make tiny68k.bin
+# Build the BITSY Mark I variant.
+# Other valid targets at the moment are `rosco_v2.bin`, `roberts7531.bin` and `mega-68000.bin`.
+
+make bitsy_v1.bin
 ```
 
 The original EmuTOS README continues below.
