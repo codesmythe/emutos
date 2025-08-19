@@ -65,7 +65,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain.cmake .
 # Build the BITSY Mark I variant.
 # Other valid targets at the moment are `rosco_v2.bin`, `roberts7531.bin` and `mega-68000.bin`.
 
-make bitsy_v1.bin
+make bitsy_v1_serial.bin
 ```
 
 The original EmuTOS README continues below.

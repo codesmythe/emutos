@@ -1,0 +1,72 @@
+#ifdef MACHINE_BITSY_V1_SERIAL
+
+#define TOS_VERSION 0x206
+
+#define CONF_ATARI_HARDWARE 0
+
+#define CONF_WITH_ADVANCED_CPU 1
+
+#define CONF_WITH_APOLLO_68080 0
+
+#define CONF_WITH_BUS_ERROR 1
+
+#define CONF_WITH_CACHE_CONTROL 0
+
+#define ALWAYS_SHOW_INITINFO 1
+
+#define CONF_STRAM_SIZE 1*1024*1024
+
+#define CONF_WITH_ALT_RAM 0
+
+#define RS232_DEBUG_PRINT 1
+
+#define CONF_WITH_MFP 1
+
+#define CONF_WITH_MFP_RS232 1
+
+/* BITSY V1 clocks the MFP at 7.387 Mhz instead of the standard 2.4576 MHz. */
+#define CONF_WITH_MFP_3X_CLOCK 1
+
+#define CONF_WITH_MFP_DS3231 1
+
+#define CONF_WITH_EARLY_MFP 1
+
+#define CONF_WITH_VBL_RTE 0
+
+#define CONF_WITH_IDE 1
+
+#define CONF_ATARI_IDE 1
+
+#define CONF_WITH_YM2149 1
+
+#define CONF_WITH_RESET 0
+
+/* Serial console is disabled by default. */
+#define CONF_SERIAL_CONSOLE 1
+
+#if CONF_SERIAL_CONSOLE
+# define CONF_SERIAL_CONSOLE_ANSI 1
+#else
+# define CONF_SERIAL_CONSOLE_ANSI 0
+#endif
+
+#define CONF_SERIAL_CONSOLE_POLLING_MODE 1
+
+#define CONF_WITH_IKBD_ACE 0
+#if CONF_WITH_IKBD_ACE
+#define ACE_UART_BASE (0xFFFF0191L)
+#endif
+
+#define USE_STOP_INSN_TO_FREE_HOST_CPU 0 /* Required, defaults to one. */
+#define DETECT_NATIVE_FEATURES 0 /* Required, defaults to zero. */
+
+#define DEFAULT_BAUDRATE B19200
+
+#define CONF_WITH_3D_OBJECTS 0
+#define CONF_WITH_COLOUR_ICONS 0
+
+#define CONF_WITH_MEMORY_TEST 0
+
+#define CONF_WITH_XOSERA_CONSOLE 0
+
+#endif

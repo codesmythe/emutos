@@ -662,6 +662,7 @@
 #include "config_tiny68k.h"
 #include "config_rosco_v2.h"
 #include "config_bitsy_v1.h"
+#include "config_bitsy_v1_sercon_1mb.h"
 #include "config_roberts7531.h"
 #include "config_mega-68000.h"
 #include "config_ddraig68k.h"

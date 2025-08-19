@@ -98,7 +98,7 @@ void init_delay(void)
  */
 void calibrate_delay(void)
 {
-#if defined(MACHINE_BITSY_V1)
+#if defined(MACHINE_BITSY_V1) || defined(MACHINE_BITSY_V1_SERIAL)
     return;
 #endif
 #if CONF_WITH_MFP

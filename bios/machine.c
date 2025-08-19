@@ -418,7 +418,7 @@ static void setvalue_mch(void)
         cookie_mch = MCH_ST;
 #elif defined(MACHINE_TINY68K)
     cookie_mch = MCH_TINY68K;
-#elif defined(MACHINE_BITSY_V1)
+#elif defined(MACHINE_BITSY_V1) || defined(MACHINE_BITSY_V1_SERIAL)
     cookie_mch = MCH_BITSY_V1;
 #elif defined(MACHINE_ROBERTS7531)
     cookie_mch = MCH_ROBERTS7531;
