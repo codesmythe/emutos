@@ -10,6 +10,34 @@
  * FUZIX is licensed under GPL v2, like EmuTOS.
  */
 
+ #if defined(MACHINE_DDRAIG68K)
+#define DUART_MRA        0x00
+#define DUART_SRA        0x02
+#define DUART_CSRA       0x02
+#define DUART_CRA        0x04
+#define DUART_RHRA       0x06
+#define DUART_THRA       0x06
+#define DUART_IPCR       0x08
+#define DUART_ACR        0x08
+#define DUART_ISR        0x0A
+#define DUART_IMR        0x0A
+#define DUART_CTU        0x0C
+#define DUART_CTUR       0x0C
+#define DUART_CTL        0x0E
+#define DUART_CTLR       0x0E
+#define DUART_MRB        0x10
+#define DUART_SRB        0x12
+#define DUART_CSRB       0x12
+#define DUART_CRB        0x14
+#define DUART_RHRB       0x16
+#define DUART_THRB       0x16
+#define DUART_IVR        0x18
+#define DUART_OPCR       0x1A
+#define DUART_STARTCTR   0x1C
+#define DUART_SETOPR     0x1C
+#define DUART_STOPCTR    0x1E
+#define DUART_CLROPR     0x1E
+#else
 #define DUART_MRA        0x01
 #define DUART_SRA        0x03
 #define DUART_CSRA       0x03
@@ -36,6 +64,7 @@
 #define DUART_SETOPR     0x1D
 #define DUART_STOPCTR    0x1F
 #define DUART_CLROPR     0x1F
+#endif
 
 /* The bit definitions here copied with slight renaming from
  * coldpriv.h

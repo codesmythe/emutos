@@ -358,7 +358,7 @@ configure_target(bitsy_v1_serial MACHINE_BITSY_V1_SERIAL  512 "-O2" US WITH_AES 
 configure_target(bitsy_v1_uk     MACHINE_BITSY_V1         512 "-O2" UK WITH_AES ON  WITH_CLI ON)
 configure_target(roberts7531     MACHINE_ROBERTS7531      256 "-Os" US WITH_AES ON  WITH_CLI ON)
 configure_target(mega-68000      MACHINE_MEGA_68000       256 "-Os" UK WITH_AES OFF WITH_CLI ON)
-configure_target(ddraig68k       MACHINE_DDRAIG68K        512 "-Os" UK WITH_AES OFF WITH_CLI ON)
+configure_target(ddraig68k    MACHINE_DDRAIG68K        128 "-Os" UK WITH_AES OFF WITH_CLI ON)
 
 
 

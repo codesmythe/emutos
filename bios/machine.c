@@ -208,7 +208,7 @@ int has_duart;
 static void detect_duart(void)
 {
     has_duart = 0;
-    if (check_read_byte(DUART_BASE+1))
+    if (check_read_byte(DUART_BASE+DUART_MRA))
         has_duart = 1;
 
     KDEBUG(("has_duart = %d\n", has_duart));

@@ -629,7 +629,11 @@ BOOL detect_ide(void)
     for (i = 0; i < NUM_IDE_INTERFACES; i++)
     {
         /* initialize base addresses for IDE interface */
+#ifdef MACHINE_DDRAIG68K
+        ifinfo[i].base_address = ide_interface;
+#else
         ifinfo[i].base_address = ide_interface + i;
+#endif
         ifinfo[i].twisted_cable = FALSE;
     }
 

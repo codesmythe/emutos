@@ -1157,7 +1157,7 @@ static ULONG rsconf_duart(UBYTE port, EXT_IOREC *iorec, WORD baud, WORD ctrl, WO
      */
     if ((baud >= MIN_BAUDRATE_CODE ) && (baud <= MAX_BAUDRATE_CODE)) {
         UBYTE baud_rate_value = 0;
-#ifdef CONF_WITH_DUART_EXTENDED_BAUD_RATES
+#if defined(CONF_WITH_DUART_EXTENDED_BAUD_RATES) && !defined(MACHINE_DDRAIG68K)
         // Special handling for 115200.
         if (baud == B115200) {
             write_duart(command_reg_num, 0xA0); // Enable extended TX rates
@@ -1172,7 +1172,7 @@ static ULONG rsconf_duart(UBYTE port, EXT_IOREC *iorec, WORD baud, WORD ctrl, WO
             else if (baud == B2000 || baud == B1800) baud = B1200;
             else if (baud == B50) baud = B75;
             baud_rate_value = baudset[baud];
-#ifdef CONF_WITH_DUART_EXTENDED_BAUD_RATES
+#if defined(CONF_WITH_DUART_EXTENDED_BAUD_RATES)  && !defined(MACHINE_DDRAIG68K)
         }
 #endif
         write_duart(clock_sel_reg_num, baud_rate_value);
@@ -1208,7 +1208,7 @@ static ULONG rsconf_duart(UBYTE port, EXT_IOREC *iorec, WORD baud, WORD ctrl, WO
     /* Write the Aux Control Register
      *
      */
-#ifdef MACHINE_TINY68K
+#if defined(MACHINE_TINY68K) || defined(MACHINE_DDRAIG68K)
     write_duart(DUART_ACR, 0x70); /* ACR[7] = 0, timer mode, x16 prescaler */ /* ACR[7] = 0 so we get 38.4K */
 #else
     write_duart(DUART_ACR, 0xf0); /* ACR[7] = 1, timer mode, x16 prescaler */

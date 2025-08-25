@@ -816,7 +816,11 @@ _duart_interrupt:
         movem.l d0-d1/a0-a1,-(sp)
 #endif
         lea     DUART_BASE, a0
+ #if MACHINE_DDRAIG68K
+        move.b  10(a0), d0            // grab the Interrupt Status Register
+ #else
         move.b  11(a0), d0            // grab the Interrupt Status Register
+ #endif
  #if CONF_DUART_TIMER_C
         btst.b  #3, d0                // Is Counter Ready (bit 3) set?
         beq     duart_check_rx_2      //    No, skip timer handling code
@@ -837,10 +841,18 @@ _duart_short_frame:
 duart_check_rx:
         lea     DUART_BASE, a0
  #if CONF_DUART_TIMER_C
+ #if MACHINE_DDRAIG68K
+        tst.b   0x1e(a0)              // Send stop counter to ack timer interrupt. Does not actually stop since in timer mode.
+ #else
         tst.b   0x1f(a0)              // Send stop counter to ack timer interrupt. Does not actually stop since in timer mode.
  #endif
+ #endif
 duart_check_rx_2:
+#if MACHINE_DDRAIG68K
+        move.b  10(a0), d0            // Get the ISR again
+#else
         move.b  11(a0), d0            // Get the ISR again
+#endif
         btst.b  #1, d0                // Is the Chan A Receive Ready (bit 1) set?
 #ifndef CONF_WITH_DUART_CHANNEL_B
         beq     duart_intr_done       //    No, skip serial handling code
@@ -850,7 +862,11 @@ duart_check_rx_2:
         jbsr    _duart_rs232_interrupt_handler_channel_a
 duart_check_channel_b:
         lea     DUART_BASE, a0
+#if MACHINE_DDRAIG68K
+        move.b  10(a0), d0            // Get the ISR again
+#else
         move.b  11(a0), d0            // Get the ISR again
+#endif
         btst.b  #5, d0                // Is the Chan B Receive Ready (bit 5) set?
         beq     duart_intr_done
 #if CONF_WITH_IKBD_DUART
