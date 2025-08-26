@@ -81,7 +81,7 @@
 # endif
 
 # ifndef CONF_SERIAL_CONSOLE
-#  define CONF_SERIAL_CONSOLE 0
+#  define CONF_SERIAL_CONSOLE 1
 # endif
 # ifndef CONF_SERIAL_CONSOLE_ANSI
 #  if CONF_SERIAL_CONSOLE
