@@ -13,7 +13,7 @@
  * option any later version.  See doc/license.txt for details.
  */
 
-/*#define ENABLE_KDEBUG*/
+#define ENABLE_KDEBUG
 
 #include "emutos.h"
 #include "machine.h"
@@ -42,6 +42,7 @@
 #include "lisa.h"
 #include "nova.h"
 #include "xosera.h"
+#include "ddraig_vga.h"
 
 void detect_monitor_change(void);
 static void setphys(const UBYTE *addr);
@@ -633,6 +634,12 @@ void screen_init_mode(void)
     xosera_screen_init();
 #endif
 
+#if CONF_WITH_DDRAIGVGA_CONSOLE
+    KDEBUG(("DDraigVGA console init\n"));
+    ddraigvga_screen_init();
+#endif
+
+
 #ifdef MACHINE_LISA
     lisa_screen_init();
 #endif
@@ -829,6 +836,10 @@ void screen_get_current_mode_info(UWORD *planes, UWORD *hz_rez, UWORD *vt_rez)
     *planes = 1;
     *hz_rez = 640;
     *vt_rez = 240;
+#elif CONF_WITH_DDRAIGVGA_CONSOLE
+    *planes = 1;
+    *hz_rez = 640;
+    *vt_rez = 480;
 #else
     atari_get_current_mode_info(planes, hz_rez, vt_rez);
 #endif
