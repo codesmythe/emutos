@@ -93,13 +93,15 @@
 # ifndef CONF_SERIAL_CONSOLE_POLLING_MODE
 #  define CONF_SERIAL_CONSOLE_POLLING_MODE 0
 # endif
-/*
- * Set CONF_WITH_DDRAIGVGA_CONSOLE to 1 to enable the EmuTOS console
- * to display on the VGA video card.
- */
 #ifndef CONF_WITH_DDRAIGVGA_CONSOLE
 # define CONF_WITH_DDRAIGVGA_CONSOLE 1
 #endif
+#ifndef CONF_WITH_VT82C42
+# define CONF_WITH_VT82C42 1
+#endif
+# ifndef CONF_VT82C42_AUTOVECTOR
+#  define CONF_VT82C42_AUTOVECTOR 4
+# endif
 
 
 # ifndef USE_STOP_INSN_TO_FREE_HOST_CPU
