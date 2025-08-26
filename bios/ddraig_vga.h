@@ -3,8 +3,13 @@
 
 #define DRVGA_TEXTBUF_SIZE  2400
 
-#define DRVGA_REG_WRITE(x, y)  (*((volatile uint16_t *) (g_gfxfpga_base + (x))) = (y))
-#define DRVGA_REG_READ(x)      (*((volatile uint16_t *) (g_gfxfpga_base + (x))))
+#include <stdint.h>
+#include "portab.h"
+
+extern uint32_t ddraigvga_base;
+
+#define DRVGA_REG_WRITE(x, y)  (*((volatile uint16_t *) (ddraigvga_base + (x))) = (y))
+#define DRVGA_REG_READ(x)      (*((volatile uint16_t *) (ddraigvga_base + (x))))
 
 #define	REG_STATUS              0x00    // Status register
 #define REG_CONTROL             0x02    // Display control register
@@ -81,5 +86,23 @@
 #define DISP_WIDTH_1024			0x0040
 #define DISP_WIDTH_2048			0x0080
 #define DISP_WIDTH_4096			0x00C0
+
+#define CMD_CLEAR_SCREEN    0x0001
+#define CMD_FILL_RECT       0x0002
+#define CMD_DRAW_PIXEL      0x0003
+#define CMD_DRAW_LINE       0x0004
+#define CMD_SET_CHARACTER   0x0010
+#define CMD_SET_TEXTCOLOR   0x0011
+#define CMD_SET_TEXTAREA    0x0012
+#define CMD_MEMORY_ACCESS   0x0020
+
+
+void drvga_write_control_reg(uint16_t data);
+void drvga_write_char(uint16_t address, uint16_t text);
+uint16_t drvga_read_char(uint16_t address);
+void drvga_copy_buffer(void);
+void drvga_scroll_up(void);
+void drvga_scroll_down(void);
+void ddraigvga_screen_init(void);
 
 #endif

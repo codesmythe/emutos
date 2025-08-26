@@ -1,6 +1,7 @@
 
 #include "config.h"
 
+/* #define ENABLE_KDEBUG */
 
 #if CONF_WITH_DDRAIGVGA_CONSOLE
 
@@ -9,10 +10,10 @@
 
 #include "ddraig_vga.h"
 
+#include "emutos.h"
 #include "portab.h"
 #include "conout.h"
 #include "lineavars.h"
-
 
 #define RGB_BLACK          0x0000
 #define RGB_BLUE           0x0100
@@ -31,32 +32,37 @@
 #define RGB_YELLOW         0x0E00
 #define RGB_WHITE          0x0F00
 
+static const UWORD dflt_palette[] = {
+    RGB_WHITE, RGB_RED, RGB_GREEN, RGB_YELLOW,
+    RGB_BLUE, RGB_MAGENTA, RGB_CYAN, RGB_LIGHTGRAY,
+    RGB_GRAY, RGB_LIGHTRED, RGB_LIGHTGREEN, RGB_BROWN,
+    RGB_LIGHTBLUE, RGB_LIGHTMAGENTA, RGB_LIGHTCYAN, RGB_BLACK
+};
 
 static UWORD cell_addr(const UWORD x, const UWORD y)
 {
     return (v_cel_mx + 1) * y + x;
 }
 
-static void xosera_write_char(const uint16_t vram_addr, const int ch)
+static void ddraig_write_char(const uint16_t addr, const int ch)
 {
-    const uint16_t color = v_stat_0 & M_REVID ? v_col_fg << 12 | v_col_bg << 8 : v_col_bg << 12 | v_col_fg << 8;
-    xm_setw(XM_WR_ADDR, vram_addr);
-    xm_setw(XM_DATA, color | ch);
+    const uint16_t color = v_stat_0 & M_REVID ? 
+        dflt_palette[v_col_bg] | (dflt_palette[v_col_fg] << 4) : dflt_palette[v_col_fg] | (dflt_palette[v_col_bg] << 4);
+    KDEBUG(("ddraig_write_char: addr=%u, ch=0x%02X, color=0x%04X\n", addr, ch & 0xFF, color));
+    drvga_write_char(addr, color | (ch & 0xFF));
 }
 
 static void neg_cell(const UWORD cell_addr)
 {
     // Get the word at the given cell address.
-    xm_setw(XM_RD_ADDR, cell_addr);
-    const uint16_t ch = xm_getw(XM_DATA);
+    const uint16_t ch = drvga_read_char(cell_addr);
 
     // Swap foreground and background colors.
-    const uint16_t new_bg = (ch >>  8 & 0xF) << 12;
-    const uint16_t new_fg = (ch >> 12 & 0xF) <<  8;
-
+    const uint16_t new_bg = (ch & 0x0F00) << 4;
+    const uint16_t new_fg = (ch & 0xF000) >> 4;
+    KDEBUG(("neg_cell: addr=%u, orig_char=%04X, new_col=0x%4X\n", cell_addr, ch, new_bg | new_fg));
     // Set the updated word at the given cell address.
-    xm_setw(XM_WR_ADDR, cell_addr);
-    xm_setw(XM_DATA, new_bg | new_fg | (ch & 0xFF));
+    drvga_write_char(cell_addr, new_bg | new_fg | (ch & 0x00FF));
 }
 
 /*
@@ -92,7 +98,7 @@ void invert_cell(int x, int y)
 void move_cursor(int x, int y)
 {
     /* update cell position */
-
+    KDEBUG(("move_cursor(%d, %d)\n", x, y));
     /* clamp x,y to valid ranges */
     if (x < 0) x = 0;
     else if (x > v_cel_mx) x = v_cel_mx;
@@ -143,13 +149,12 @@ void move_cursor(int x, int y)
 
 void blank_out(const int top_x, const int top_y, const int bottom_x, const int bottom_y)
 {
-    const uint16_t color = v_col_bg << 12 | v_col_bg << 8;
+    const uint16_t color = dflt_palette[v_col_bg] << 4 | dflt_palette[v_col_bg];
     int x, y;
-    xm_setw(XM_WR_INCR, 1);
     for (y = top_y; y <= bottom_y; y++) {
         uint16_t addr = cell_addr(0, y);
         for (x = top_x; x < bottom_x; x++) {
-            xosera_write_char(addr, color | ' ');
+            ddraig_write_char(addr, color | ' ');
             addr++;
         }
     }
@@ -161,19 +166,7 @@ void blank_out(const int top_x, const int top_y, const int bottom_x, const int b
 
 void scroll_up(const UWORD top_line)
 {
-    const uint16_t dest_vram = cell_addr(0, top_line);
-    const uint16_t src_vram  = dest_vram + (v_cel_mx + 1); // one row below dest
-    const uint16_t count = (v_cel_my + 1 - top_line) * (v_cel_mx + 1);
-    xm_setw(XM_RD_ADDR, src_vram);
-    xm_setw(XM_WR_ADDR, dest_vram);
-    xm_setw(XM_RD_INCR, 1);
-    xm_setw(XM_WR_INCR, 1);
-    int i;
-    for (i = 0; i< count; i++) {
-        const uint16_t val = xm_getw(XM_DATA);
-        xm_setw(XM_DATA, val);
-    }
-
+    drvga_scroll_up();
     blank_out(0, v_cel_my, v_cel_mx, v_cel_my);
 }
 
@@ -183,19 +176,7 @@ void scroll_up(const UWORD top_line)
 
 void scroll_down(const UWORD start_line)
 {
-    xm_setw(XM_RD_INCR, 1);
-    xm_setw(XM_WR_INCR, 1);
-    int row, i;
-    for (row = v_cel_my; row > start_line; row--) {
-        const uint16_t dst_vram = cell_addr(0, row);
-        const uint16_t src_vram = dst_vram - (v_cel_mx + 1);
-        xm_setw(XM_RD_ADDR, src_vram);
-        xm_setw(XM_WR_ADDR, dst_vram);
-        for (i = 0; i < v_cel_mx + 1; i++) {
-            const uint16_t val = xm_getw(XM_DATA);
-            xm_setw(XM_DATA, val);
-        }
-    }
+    drvga_scroll_down();
     blank_out(0, start_line, v_cel_mx, start_line);
 }
 
@@ -228,12 +209,13 @@ static bool next_cell(void)
 void ascii_out(const int ch)
 {
     const bool visible = v_stat_0 & M_CVIS;        /* test visibility bit */
+    //KDEBUG(("ascii_out: ch=0x%02X, cursor at (%u,%u), visible=%d\n", ch & 0xFF, v_cur_cx, v_cur_cy, visible));
     if (visible) {
         v_stat_0 &= ~M_CVIS;                    /* start of critical section */
     }
 
     /* put the cell out (this covers the cursor) */
-    xosera_write_char(cell_addr(v_cur_cx, v_cur_cy), ch);
+    ddraig_write_char(cell_addr(v_cur_cx, v_cur_cy), ch);
 
     if (next_cell()) {
         /* Need to do a carriage return / line feed */

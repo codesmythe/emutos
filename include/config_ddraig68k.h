@@ -81,7 +81,7 @@
 # endif
 
 # ifndef CONF_SERIAL_CONSOLE
-#  define CONF_SERIAL_CONSOLE 1
+#  define CONF_SERIAL_CONSOLE 0
 # endif
 # ifndef CONF_SERIAL_CONSOLE_ANSI
 #  if CONF_SERIAL_CONSOLE
@@ -93,7 +93,6 @@
 # ifndef CONF_SERIAL_CONSOLE_POLLING_MODE
 #  define CONF_SERIAL_CONSOLE_POLLING_MODE 0
 # endif
-
 /*
  * Set CONF_WITH_DDRAIGVGA_CONSOLE to 1 to enable the EmuTOS console
  * to display on the VGA video card.
