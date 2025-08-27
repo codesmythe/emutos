@@ -1,27 +1,54 @@
+#include "config.h"
+
+#define ENABLE_KDEBUG
+
+#ifdef CONF_WITH_VT82C42
+
+#include "emutos.h"
 #include <stdio.h>
-#include <printf.h>
 #include <ctype.h>
 #include <stdbool.h>
 
-#include "vt8242.h"
-#include "keycodes.h"
-#include "drivers/keyboard.h"
+#include "vt82c42.h"
 
 uint8_t vt8242_flush();
 
 static uint8_t g_key_mode = 0;
 static uint16_t g_key_state = 0;
 
-#define SCANCODE_BUFFER_SIZE 64
-#define KEYPRESS_BUFFER_SIZE 64
+const char st_make_code_map[] PROGMEM = {
+    0 , 67 /*F9*/, 0 , 63 /*F5*/, 61 /*F3*/, 59 /*F1*/, 60 /*F2*/, 97 /*F12*/,
+	0 , 68 /*F10*/, 66 /*F8*/, 64 /*F6*/, 62 /*F4*/, 15 /*Tab*/, 41 /*Backtick/Tilde (`~)*/, 0 , 
+    0 , 56 /*Left Alt*/, 42 /*Left Shift*/, 0 , 29 /*Left Ctrl*/, 16 /*Q*/, 2 /*1*/, 0 ,
+    0 , 0 , 44 /*Z*/, 31 /*S*/, 30 /*A*/, 17 /*W*/, 3 /*2*/, 0 ,
+	0 , 46 /*C*/, 45 /*X*/, 32 /*D*/, 18 /*E*/, 5 /*4*/, 4 /*3*/, 0 ,
+    0 , 57 /*Space*/, 47 /*V*/, 33 /*F*/, 20 /*T*/, 19 /*R*/, 6 /*5*/, 0 ,
+    0 , 49 /*N*/, 48 /*B*/, 35 /*H*/, 34 /*G*/, 21 /*Y*/, 7 /*6*/, 0 ,
+    0 , 0 , 50 /*M*/, 36 /*J*/, 22 /*U*/, 8 /*7*/, 9 /*8*/, 0 ,
+    0 , 51 /*Comma (,<)*/, 37 /*K*/, 23 /*I*/, 24 /*O*/, 11 /*0*/, 10 /*9*/, 0 ,
+    0 , 52 /*Period (.>)*/, 53 /*Slash (/?)*/, 38 /*L*/, 39 /*Semicolon (;:)*/, 25 /*P*/, 12 /*Minus (-_)*/, 0 ,
+    0 , 0 , 40 /*Apostrophe ('")*/, 0 , 26 /*Left Bracket ([{)*/, 13 /*Equals (=+)*/, 0 , 0 , 58 /*CapsLock*/,
+    54 /*Right Shift*/, 28 /*Enter*/, 27 /*Right Bracket (]})*/, 0 , 43 /*Backslash (\|)*/, 0 , 
+    0 , 0 , 96 /*UK \| between left shift and Z*/, 0 , 0 , 0 , 0 , 14 /*Backspace*/, 0 , 0 , 109 /*Keypad 1/End*/,
+    0 , 106 /*Keypad 4/Left*/, 103 /*Keypad 7/Home*/, 0 , 0 , 0 , 112 /*Keypad 0/Ins*/, 113 /*Keypad ./Del*/,
+    110 /*Keypad 2/Down*/, 107 /*Keypad 5*/, 108 /*Keypad 6/Right*/, 104 /*Keypad 8/Up*/, 1 /*Escape*/,
+    -1 /*NumLock*/, 98 /*F11*/, 78 /*Keypad +*/, 111 /*Keypad 3/PgDn*/, 74 /*Keypad -*/, 102 /*Keypad **/,
+    105 /*Keypad 9/PgUp*/, -1 /*ScrollLock*/, 0 , 0 , 0 , 0 , 65 /*F7*/
+};
+static const uint8_t st_extended_make_code_map[] = {
+    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 
+    56 /*Right Alt*/, 0 , 0 , 29 /*Right Ctrl*/, 0 , 0 , 0 , 0 , 0 , 0 ,
+    0 , 0 , 0 , 0 , -1 /*Left GUI (Windows)*/, 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+    -1 /*Right GUI (Windows)*/, 0 , 0 , 0 , 0 , 0 , 0 , 0 , -1 /*Menu*/,
+    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 101 /*Keypad /*/, 0 , 0 , 0 ,
+    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 114 /*Keypad Enter*/,
+    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 79 /*End*/,
+    0 , 75 /*Left Arrow*/, 71 /*Home*/, 0 , 0 , 0 , 82 /*Insert*/, 83 /*Delete*/,
+    80 /*Down Arrow*/, 0 , 77 /*Right Arrow*/, 72 /*Up Arrow*/, 0 , 0 , 0 , 0 ,
+    81 /*Page Down*/, 0 , 0 , 73 /*Page Up*/, 0 , 0
+};
 
-uint16_t g_scancode_data[SCANCODE_BUFFER_SIZE];
-uint16_t g_keypress_data[KEYPRESS_BUFFER_SIZE];
-
-ringbuffer_t g_buf_scancode;
-ringbuffer_t g_buf_keypress;
-
-//#define PS2_DEBUG 1
 #define PS2_TIMEOUT 1000
 #define WAIT_TIMEOUT 10000
 
@@ -157,26 +184,20 @@ bool vt8242_init()
 
 	if (vt8242_send_command(CMD_DIAG, true) != KBD_STATUS_DIAG_OK)
     {
-#ifdef PS2_DEBUG
-		printf("ERROR: PS/2 keyboard controller failed.\n");
-#endif
+		KDEBUG(("ERROR: PS/2 keyboard controller failed.\n"));
         return 0;
 	}
 
 	vt8242_send_command(CMD_AUX_ON, false); // enable 2nd port
 	if (!(vt8242_get_config_byte() & CMD_BYTE_AUX_OFF))
     {
-#ifdef PS2_DEBUG
-		printf("PS/2 controller has 2 channels.\n");
-#endif
+		KDEBUG(("PS/2 controller has 2 channels.\n"));
 		vt8242_send_command(CMD_AUX_OFF, false);
 	}
 
 	if (vt8242_send_command(CMD_KBD_TEST, true) != 0x00)
     {
-#ifdef PS2_DEBUG
-		printf("ERROR: Check keyboard!\n");
-#endif
+		KDEBUG(("ERROR: Check keyboard!\n"));
 	}
 	// enable first PS/2 port
 	vt8242_send_command(CMD_KBD_ON, false);
@@ -190,16 +211,12 @@ bool vt8242_init()
         init_response = keyboard_send_command(KBD_CMD_RST);
         if (init_response == KBD_STATUS_RESEND)
         {
-    #ifdef PS2_DEBUG
-            printf("ERROR: Keyboard reset resending\n");
-    #endif
+            KDEBUG(("ERROR: Keyboard reset resending\n"));
             continue;
         }
         else if ((init_response != KBD_STATUS_RST_OK) && (init_response != KBD_STATUS_ACK))
         {
-    #ifdef PS2_DEBUG
-            printf("ERROR: Keyboard reset error, resp = %02x\n", init_response);
-    #endif
+            KDEBUG(("ERROR: Keyboard reset error, resp = %02x\n", init_response));
         }
     }
 
@@ -208,13 +225,7 @@ bool vt8242_init()
 	init_response = VT82_REG(VT82_DATA);
     if ((init_response != KBD_STATUS_RST_OK) && (init_response != KBD_STATUS_ACK))
     {
-#ifdef PS2_DEBUG
-		printf("ERROR: Keyboard self test failed, resp = %02X\n", init_response);
-		if (init_response == 0xFC)
-        {
-			printf("Basic assurance test failed (0xFC)\n");
-		}
-#endif
+		KDEBUG(("ERROR: Keyboard self test failed, resp = %02X\n", init_response));
 		return 0;
 	}
 
@@ -236,7 +247,7 @@ uint8_t vt8242_flush()
 
 	if (timeout == 0)
 	{
-        printf("keyboard output buffer flush timed out - Controller Failure?\n");
+        KDEBUG(("keyboard output buffer flush timed out - Controller Failure?\n"));
 		return -1;
 	}
 	return 0;
@@ -444,3 +455,5 @@ void vt8242_process_scancode(register uint8_t sc)
         }
 	}
 }
+
+#endif
