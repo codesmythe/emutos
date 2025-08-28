@@ -1,11 +1,10 @@
 #ifndef _VT82C42__H_
 #define _VT82C42__H_
 
-#include <stdint.h>
 #include "portab.h"
 
 #define PS2_BASE 0x00F7F200
-#define VT82_REG(x)      (*((volatile uint8_t *) PS2_BASE + x))
+#define VT82_REG(x)      (*((volatile UBYTE *) PS2_BASE + x))
 
 // Register Offsets
 #define VT82_DATA		  		0x00
@@ -100,6 +99,7 @@
 
 #define SCAN_CODE_BREAK         0xF0
 #define SCAN_CODE_MODIFIER      0xE0
+#define SCAN_CODE_PSBRK         0xE1
 #define SCAN_CODE_ALT           0x11
 #define SCAN_CODE_SHIFTL        0x12
 #define SCAN_CODE_SHIFTR        0x59
@@ -125,22 +125,23 @@
 #define SCAN_CODE_PAGEUP        0x7D
 
 
-extern ringbuffer_t g_buf_scancode;
-extern ringbuffer_t g_buf_keypress;
+void vt8242_keyboard_interrupt(void);
 
-bool vt8242_init();
-bool vt8242_has_data();
-uint16_t vt8242_get_key();
-uint8_t vt8242_flush();
+UBYTE vt8242_init(void);
+UBYTE vt8242_flush(void);
+void vt8242_disable_for_init(void);
 
-void vt8242_init_buffers();
-void vt8242_set_config_byte(uint8_t cfg_byte);
-void vt8242_process_scancode(uint8_t sc);
+void vt8242_set_config_byte(UBYTE cfg_byte);
+UBYTE vt8242_get_config_byte(void);
+void vt8242_process_scancode(UBYTE sc);
 
 void vt8242_enable_port1_interrupt(void);
 void vt8242_enable_port2_interrupt(void);
 void vt8242_disable_port1_interrupt(void);
 void vt8242_disable_port2_interrupt(void);
 
+void vt8242_set_leds(UBYTE leds);
+UBYTE vt8242_send_command(UBYTE cmd, UBYTE wait_response);
+UBYTE keyboard_send_command(UBYTE cmd);
 
 #endif

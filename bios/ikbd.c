@@ -42,6 +42,7 @@
 #include "lisa.h"
 #include "ace_uart.h"
 #include "duart68681.h"
+#include "vt82c42.h"
 
 
 /* forward declarations */
@@ -1138,6 +1139,10 @@ void kbd_init(void)
 
 #ifdef MACHINE_LISA
     lisa_kbd_init();
+#endif
+
+#ifdef CONF_WITH_VT82C42
+    vt8242_init();
 #endif
 
 #if CONF_WITH_IKBD_ACE

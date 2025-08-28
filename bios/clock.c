@@ -1489,22 +1489,6 @@ static void rtc_ddraig_delay(ULONG d)
     while (wait--);
 }
 
-static void rtc_ddraig_wait_busy(void)
-{
-    RTC_WRITE(RTC_CONTROL_D, 1); // No interrupts, HOLD Bit=1
-
-    UBYTE status = RTC_READ(RTC_CONTROL_D);
-
-    while (status & 2)
-    {
-        RTC_WRITE(RTC_CONTROL_D, 0); // No interrupts, HOLD Bit=0
-        rtc_ddraig_delay(10);
-        RTC_WRITE(RTC_CONTROL_D, 1); // No interrupts, HOLD Bit=1
-        status = RTC_READ(RTC_CONTROL_D);
-    }
-    RTC_WRITE(RTC_CONTROL_D, 0);
-}
-
 static UBYTE rtc_ddraig_read_register(UBYTE reg)
 {
     RTC_WRITE(RTC_CONTROL_D, 1); // No interrupts, HOLD Bit=1
@@ -1566,7 +1550,7 @@ void rtc_ddraig_setdt(LONG dt)
     rtc_ddraig_write_register(RTC_SECOND10, time.second / 10);
 	rtc_ddraig_write_register(RTC_SECOND1,  time.second % 10);
 
-    return 0;
+    return;
 }
 
 LONG rtc_ddraig_getdt(void)

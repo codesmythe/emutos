@@ -80,7 +80,7 @@ if (COLDFIRE)
     set(bios_src ${bios_src} bios/codefile.c bios/coldfile2.S spi_cf.c)
 endif()
 
-set(bios_src ${bios_src} bios/conout_xosera.c bios/xosera.c bios/conout_ddraig.c bios/ddraig_vga.c)
+set(bios_src ${bios_src} bios/conout_xosera.c bios/xosera.c bios/conout_ddraig.c bios/ddraig_vga.c bios/vt82c42.c)
 
 #
 # source code in bdos/
