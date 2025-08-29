@@ -26,8 +26,6 @@ void vt8242_delay(unsigned long d);
 void vt82_wait_status(UBYTE flag);
 void vt82_wait_clear(UBYTE flag);
 
-void vt8242_interrupt(void);
-
 void write_vt(UBYTE reg, UBYTE val) {
     volatile UBYTE *vt_base = (volatile UBYTE *) PS2_BASE;
     vt_base[reg] = val;
@@ -78,8 +76,7 @@ static const UBYTE st_extended_make_code_map[] = {
 #define WAIT_TIMEOUT 10000
 
 //	keyboard interrupt handler
-//void __attribute__((interrupt)) vt8242_keyboard_interrupt(void)
-void vt8242_interrupt_handler(void)
+void __attribute__((interrupt)) vt8242_interrupt_handler(void)
 {
     UBYTE register sc;
     sc = read_vt(VT82_DATA);
@@ -269,9 +266,8 @@ UBYTE vt8242_init(void)
 	// }
 
     KDEBUG(("vt8242: install keyboard interrupt handler\n"));
-    vector_addr = &VEC_LEVEL5;
-    *vector_addr = (PFVOID) vt8242_interrupt;
-
+    vector_addr = &VEC_LEVEL1 + (CONF_VT82C42_AUTOVECTOR - 1);
+    *vector_addr = (PFVOID)vt8242_interrupt_handler;
     //(*((long *)0x74) = (long)vt8242_keyboard_interrupt);
 
     //vt8242_enable_port1_interrupt();
