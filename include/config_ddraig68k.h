@@ -100,7 +100,7 @@
 # define CONF_WITH_VT82C42 1
 #endif
 # ifndef CONF_VT82C42_AUTOVECTOR
-#  define CONF_VT82C42_AUTOVECTOR 4
+#  define CONF_VT82C42_AUTOVECTOR 5
 # endif
 
 

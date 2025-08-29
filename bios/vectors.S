@@ -801,6 +801,14 @@ _sccb_es_interrupt:
 
 #endif  //CONF_WITH_SCC
 
+ #if MACHINE_DDRAIG68K
+        .globl  _vt8242_interrupt
+
+_vt8242_interrupt:
+        jbsr    _vt8242_interrupt_handler
+        rte
+#endif
+
 #if CONF_WITH_DUART
 // ==== Motorola 68681 Dual UART Interrupt Handler ====
 // We look at three sources of interrupts from the DUART:

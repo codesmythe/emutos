@@ -3,14 +3,6 @@
 
 #include "portab.h"
 
-#define PS2_BASE 0x00F7F200
-#define VT82_REG(x)      (*((volatile UBYTE *) PS2_BASE + x))
-
-// Register Offsets
-#define VT82_DATA		  		0x00
-#define VT82_CMD 				0x02
-#define VT82_STATUS				0x02
-
 // 8542 Commands (Sent to the Command Port)
 #define CMD_SET_BYTE		    0x60	// Set the command byte
 #define CMD_GET_BYTE		    0x20	// Get the command byte
@@ -125,7 +117,7 @@
 #define SCAN_CODE_PAGEUP        0x7D
 
 
-void vt8242_keyboard_interrupt(void);
+void vt8242_interrupt_handler(void);
 
 UBYTE vt8242_init(void);
 UBYTE vt8242_flush(void);
