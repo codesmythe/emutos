@@ -1099,9 +1099,9 @@ static void init_uart_ace(volatile struct ACE_UART *ace)
     ace->ier_divmsb = 0;
     ace->lcr = 0; // Clear Divisor Latch Bit (DLAB;
     ace->lcr = 0x3; // Set 8 bit data, 1 stop bit;
-    // Disabling the FIFO because I can't get it to work.
-    ace->fifo_iir = 0x06; // Clear both FIFO, set trigger level to 1 byte
-    ace->fifo_iir = 0x00; // Disable the FIFO
+    ace->fifo_iir = 0x01; /* Enable the receive and transmit FIFOs. */
+    ace->fifo_iir = 0xC1; /* Set FIFO sizes to 14 */
+    ace->fifo_iir = 0x07; /* Reset the FIFOs. */
     ace->mcr = 0x03; // Assert RTS and DTR.
     (void) ace->lsr; // Read Line Status Register to clear any pending interrupts.
     (void) ace->msr; // Read Modem Status Register to clear any pending interrupts.
