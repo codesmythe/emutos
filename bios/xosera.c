@@ -213,7 +213,9 @@ static void setup_xosera_text_screen(uint16_t disp_vram_start)
 static void init_system_vars(void)
 {
     /* Screen address */
-    //v_bas_ad = (UBYTE *)novamembase;
+    /* We are going to say, in a totally fake way, that Xosera's
+       128K of VRAM lives at 0xF8_0000. */
+    v_bas_ad = (UBYTE *)0xF80000;
     /* Fake 640x200x2 video mode (ST medium) */
     sshiftmod = 1;
 
